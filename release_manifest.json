@@ -23,18 +23,20 @@
   "local_validation": {
     "platform": "Darwin 25.5.0 arm64",
     "python": "3.12.13",
+    "opencv": "4.14.0",
     "compileall": "PASS",
-    "pytest": "99 passed",
+    "pytest": "113 passed",
     "json_schema": "3/3 PASS",
     "public_golden": "1/1 PASS",
-    "privacy_scan": "PASS (80 candidates; 10 images; 70 text files; 0 fonts; 0 errors)",
+    "public_fixture_provenance": "PASS (independent human-reviewed registry; generator cannot write it)",
+    "privacy_scan": "PASS (83 candidates; 10 images; 73 text files; 0 fonts; 0 errors)",
     "light_effect_dataset": "4/4 PASS",
-    "doctor": "PASS",
+    "doctor": "PASS (CJK font available; no emergency fallback)",
     "wheel_build": "PASS",
     "wheel_audit": "PASS (24 entries; 18 package files; 6 metadata files)",
-    "wheel_install": "PASS",
+    "wheel_install": "PASS (fresh temporary virtual environment)",
     "pip_check": "PASS",
-    "wheel_cli_smoke": "PASS (exactly PNG + JSON; 1600x1200; 0 JPG)"
+    "wheel_cli_smoke": "PASS (exactly PNG + JSON; 1600x1200; 0 JPG/JPEG; Schema valid; input unchanged)"
   },
   "ci": {
     "configured": true,
@@ -57,14 +59,16 @@
   "face_backend": {
     "default": "opencv",
     "portable": "opencv",
+    "opencv_supported": ">=4.9,<5",
+    "opencv_5_supported": false,
     "enhanced": "dlib optional",
     "disabled": "none",
     "advisory_not_core_gate": true
   },
   "wheel": {
     "file": "color_palette_skill-0.12.0-py3-none-any.whl",
-    "size_bytes": 36821,
-    "sha256": "46f9900954212e7db7cfddd2f681c07020b7b1042ce97b666f6df8f72d41ed7d",
+    "size_bytes": 37446,
+    "sha256": "a1e899a1afa65822ada4389cfcf0554fefd6007aeb27f99822b13945f6acb14e",
     "pure_python": true,
     "paid_model_runtime_dependency": false
   },
@@ -73,7 +77,8 @@
     "private_ground_truth_in_public_source": false,
     "font_files_in_public_source": false,
     "secret_or_token_findings": 0,
-    "public_examples": "program-generated CC0-1.0"
+    "public_examples": "program-generated CC0-1.0 with independent human-reviewed provenance registry",
+    "generator_writes_provenance": false
   },
   "known_risks": [
     "GitHub Actions跨平台矩阵需在Pull Request创建后取得远程结果",

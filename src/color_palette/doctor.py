@@ -32,15 +32,19 @@ def collect_diagnostics() -> dict:
 
     try:
         font_meta = FontResolver().metadata()
-        font_ok = True
+        font_diagnostic_ok = True
+        cjk_available = not bool(font_meta["emergency_fallback"])
         font_error = None
     except Exception as exc:
         font_meta = None
-        font_ok = False
+        font_diagnostic_ok = False
+        cjk_available = False
         font_error = str(exc)
 
     required_ok = all(checks[name]["available"] for name in ["jpg", "zlib", "webp", "littlecms2"])
-    status = "通过" if required_ok and font_ok else "失败"
+    # A missing CJK font is a visible warning, not a report-generation blocker.
+    # An unexpected diagnostics error remains a failure.
+    status = "通过" if required_ok and font_diagnostic_ok else "失败"
     return {
         "status": status,
         "tool_version": __version__,
@@ -65,7 +69,18 @@ def collect_diagnostics() -> dict:
             else "dlib增强后端可用；核心默认仍为OpenCV"
         ),
         "font": {
-            "ok": font_ok,
+            "ok": cjk_available,
+            "cjk_available": cjk_available,
+            "emergency_fallback": bool(
+                font_meta and font_meta.get("emergency_fallback")
+            ),
+            "status": (
+                "可用"
+                if cjk_available
+                else "紧急回退（未找到可用中文字体）"
+                if font_diagnostic_ok
+                else "检查失败"
+            ),
             "metadata": font_meta,
             "error": font_error,
         },

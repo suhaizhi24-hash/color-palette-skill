@@ -2,67 +2,88 @@
   "version": "0.12.0",
   "privacy": "公开",
   "license": "CC0-1.0",
-  "origin": "程序生成，无真人、无私人素材、无外部版权依赖",
+  "review_policy": "人工审核固定来源",
+  "generated_by_tool": false,
   "files": [
     {
       "path": "examples/output_v012/synthetic_portrait_color_report.png",
       "sha256": "23ef0e25609a5b7fa3f700f11728ee7f2dbe76104c2ea393280c1cb6bd2fcc74",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "公开合成肖像经本项目本地渲染生成"
     },
     {
       "path": "examples/public/synthetic_exif_orientation.jpg",
       "sha256": "164e875b265a6389d5dece12af94f517d22ec2d89bed8075af7c7ec3d769cb7c",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "Pillow生成的几何色块与EXIF方向输入夹具"
     },
     {
       "path": "examples/public/synthetic_grain.png",
       "sha256": "96881a698606c27399a4b7530953bb3f58320c4f9466ff6d2b30b076774f3d5a",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "NumPy与Pillow确定性生成的灰度颗粒夹具"
     },
     {
       "path": "examples/public/synthetic_hard_light.png",
       "sha256": "d0654285df06d3819fe010c553ba5307516df78c974b3d1ac13f29483f5a6a35",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "NumPy与Pillow确定性生成的硬光夹具"
     },
     {
       "path": "examples/public/synthetic_lossless.webp",
       "sha256": "d4727af62a58e4b7b8c9b8b6306b76b683cb5cf0350d2a5e90d0e40d1d6a4df5",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "Pillow生成的几何图形无损WebP输入夹具"
     },
     {
       "path": "examples/public/synthetic_soft_light.png",
       "sha256": "655ca159b327dee8df95e92c62a728015e48587ccd02a308364c20695e9d87a2",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "NumPy与Pillow确定性生成的柔光夹具"
     },
     {
       "path": "examples/public/synthetic_srgb_icc.png",
       "sha256": "45ad5a09f345cd435217dd8d878a7c55b47d3108f52a490e54213a739ee9e41d",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "Pillow生成并嵌入标准sRGB ICC、固定ICC头时间字段的输入夹具"
     },
     {
       "path": "examples/public/synthetic_transparent.png",
       "sha256": "6d6f511d4c2712b2b4af974630bec57e93d18bdfc3fa68a6759a8edebe5e3a6b",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "NumPy与Pillow确定性生成的透明像素输入夹具"
     },
     {
       "path": "examples/public/synthetic_vignette.png",
       "sha256": "c78eafa425b1dc03857ed80f7a16b775b0310c9cdb8328aac4c36e7e369d9acf",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "NumPy与Pillow确定性生成的暗角夹具"
     },
     {
       "path": "examples/synthetic_portrait.png",
       "sha256": "b2f832799674dbef3310dbefdb3f562f0d87a805910202646ae04a6067987f9b",
       "license": "CC0-1.0",
-      "generated": true
+      "generated": true,
+      "reviewed": true,
+      "origin": "几何图形合成的人像输入夹具，无真人素材"
     }
   ]
 }

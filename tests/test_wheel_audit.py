@@ -188,8 +188,10 @@ def test_ci_audits_wheel_before_install_and_smoke():
     workflow = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     build = workflow.index("Build wheel")
     audit = workflow.index("Audit built wheel")
-    install = workflow.index("Install built wheel")
-    smoke = workflow.index("Wheel CLI smoke test")
-    assert build < audit < install < smoke
+    clean_install_and_smoke = workflow.index(
+        "Clean virtual environment Wheel install and CLI smoke"
+    )
+    assert build < audit < clean_install_and_smoke
     assert "python tools/audit_wheel.py dist" in workflow
+    assert "python tools/clean_wheel_smoke.py dist" in workflow
     assert "--expected-version 0.12.0" in workflow

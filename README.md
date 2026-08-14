@@ -48,6 +48,9 @@ color-palette photo.jpg --output ./result
 color-palette photo.jpg --output ./result --face-backend opencv
 ```
 
+V0.12.0 的兼容范围为 OpenCV 4.9 至 4.x（依赖约束 `>=4.9,<5`）。
+OpenCV 5.x 尚未纳入兼容性承诺，待完成独立兼容测试后再放开上限。
+
 其他选项：
 
 ```text
@@ -100,8 +103,11 @@ color-palette-golden ./my-images \
 公开示例全部由程序生成，登记在：
 
 ```text
+examples/public_examples_provenance.json  # 人工审核、生成器不可写
 examples/public_examples_manifest.json
 ```
+
+隐私扫描会同时校验两份登记；清单中的未知图片不能自行获得信任。
 
 发布前运行：
 

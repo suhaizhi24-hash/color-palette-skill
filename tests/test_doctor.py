@@ -4,6 +4,7 @@ import pytest
 from PIL import Image, ImageDraw
 
 from color_palette.doctor import collect_diagnostics
+from color_palette.constants import FONT_CANDIDATES_BOLD, FONT_CANDIDATES_REGULAR
 from color_palette.render import FontResolver
 from color_palette.pipeline import run
 
@@ -13,7 +14,11 @@ def test_doctor_reports_zero_token_and_output_contract():
     assert result["zero_token"] is True
     assert result["official_output"] == ["analysis.json", "color_report.png"]
     assert "opencv" in result["face_backends"]
-    assert result["font"]["ok"] is True
+    assert result["font"]["cjk_available"] is result["font"]["ok"]
+    assert result["font"]["status"] in {
+        "可用",
+        "紧急回退（未找到可用中文字体）",
+    }
 
 
 def test_missing_fonts_do_not_block_report(monkeypatch):
@@ -26,6 +31,39 @@ def test_missing_fonts_do_not_block_report(monkeypatch):
     assert resolver.regular(16) is not None
     assert resolver.bold(16) is not None
     assert resolver.metadata()["emergency_fallback"] is True
+
+
+def test_doctor_reports_missing_cjk_font_without_blocking(monkeypatch):
+    monkeypatch.setattr(
+        FontResolver,
+        "_resolve",
+        staticmethod(lambda candidates, override=None: None),
+    )
+    result = collect_diagnostics()
+    assert result["font"]["ok"] is False
+    assert result["font"]["cjk_available"] is False
+    assert result["font"]["emergency_fallback"] is True
+    assert result["font"]["status"] == "紧急回退（未找到可用中文字体）"
+    assert result["status"] == "通过"
+
+
+@pytest.mark.parametrize(
+    "candidates",
+    [FONT_CANDIDATES_REGULAR, FONT_CANDIDATES_BOLD],
+)
+def test_official_font_fallbacks_precede_os_last_resorts(candidates):
+    names = [path.name.casefold() for path in candidates]
+    first_noto = next(index for index, name in enumerate(names) if "noto" in name)
+    first_source_han = next(
+        index for index, name in enumerate(names) if "sourcehansans" in name
+    )
+    first_os_last_resort = next(
+        index
+        for index, name in enumerate(names)
+        if any(token in name for token in ("hiragino", "stheiti", "msyh", "simhei"))
+    )
+    assert first_noto < first_os_last_resort
+    assert first_source_han < first_os_last_resort
 
 
 def test_missing_fonts_still_write_png_and_json(monkeypatch, gradient_jpg, tmp_path):

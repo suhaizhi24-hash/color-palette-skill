@@ -332,6 +332,7 @@ color-palette-golden ./images \
 - 允许通过 `COLOR_PALETTE_FONT_REGULAR` 与 `COLOR_PALETTE_FONT_BOLD` 指定本地字体；
 - 仓库不得打包或分发字体文件；
 - 字体完全缺失时允许内置紧急回退，不得阻塞正式报告输出。
+- `color-palette-doctor` 必须明确报告中文字体是否可用及是否进入紧急回退。
 
 ## 格式与色彩管理
 - EXIF Orientation 必须先修正再分析；
@@ -343,6 +344,7 @@ color-palette-golden ./images \
 
 ## 人脸后端
 - 跨平台默认使用 OpenCV；
+- V0.12.0 支持并测试 OpenCV 4.9 至 4.x（`>=4.9,<5`），暂不承诺 OpenCV 5.x；
 - dlib 为可选增强，不得成为核心依赖；
 - dlib 缺失或失败时安全降级至 OpenCV；
 - `none` 允许关闭肤色分析，但不得影响核心色彩分析；
@@ -358,11 +360,12 @@ color-palette-golden ./images \
 - Zero-token 与 PNG-only 输出契约。
 
 ## 公开示例与隐私
-- 公开仓库只允许程序生成或许可清晰的示例图；
-- 示例必须登记 SHA-256 与许可；
+- 公开仓库只允许程序生成且经人工审核的合成示例图；
+- 人工审核来源表与生成清单必须独立，生成器不得写入来源表；
+- 示例必须在两份登记中保持相同的 SHA-256 与许可；
 - 公开示例不得含 GPS EXIF；
 - 私人照片与私人 Ground Truth 必须与公开源码物理分离；
-- 发布前必须通过 `tools/privacy_scan.py`。
+- 必须先扫描 checkout 原貌；如更新夹具，生成后再次扫描，之后才能打包与发布。
 
 ## 光线与素材特效
 - P1-C 在正式算法门禁前，先使用独立公开 Golden Dataset；

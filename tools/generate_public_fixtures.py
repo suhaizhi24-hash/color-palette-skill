@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import struct
 
 import numpy as np
 from PIL import Image, ImageCms, ImageDraw
@@ -11,15 +12,11 @@ from PIL import Image, ImageCms, ImageDraw
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "examples" / "public"
 OUT.mkdir(parents=True, exist_ok=True)
-
-FIXED_PUBLIC_FIXTURES = {
-    "examples/synthetic_portrait.png": (
-        "b2f832799674dbef3310dbefdb3f562f0d87a805910202646ae04a6067987f9b"
-    ),
-    "examples/output_v012/synthetic_portrait_color_report.png": (
-        "23ef0e25609a5b7fa3f700f11728ee7f2dbe76104c2ea393280c1cb6bd2fcc74"
-    ),
-}
+PROVENANCE_PATH = ROOT / "examples" / "public_examples_provenance.json"
+FIXED_PUBLIC_FIXTURE_PATHS = (
+    "examples/synthetic_portrait.png",
+    "examples/output_v012/synthetic_portrait_color_report.png",
+)
 
 
 def sha256(path: Path) -> str:
@@ -36,6 +33,33 @@ def require_fixed_public_fixture(relative: str, expected_sha256: str) -> Path:
             f"固定公开合成样例哈希不一致，拒绝自动登记：{relative}"
         )
     return path
+
+
+def load_reviewed_provenance() -> dict[str, dict]:
+    """Read the human-reviewed registry; this generator never writes it."""
+
+    try:
+        document = json.loads(PROVENANCE_PATH.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("独立公开样例来源登记表无法读取") from exc
+    if (
+        not isinstance(document, dict)
+        or document.get("review_policy") != "人工审核固定来源"
+        or document.get("generated_by_tool") is not False
+    ):
+        raise RuntimeError("独立公开样例来源登记表未经人工固定审核")
+    entries: dict[str, dict] = {}
+    for item in document.get("files", []):
+        if not isinstance(item, dict) or item.get("reviewed") is not True:
+            raise RuntimeError("独立公开样例来源登记项缺少人工审核标记")
+        relative = item.get("path")
+        digest = item.get("sha256")
+        if not isinstance(relative, str) or not isinstance(digest, str):
+            raise RuntimeError("独立公开样例来源登记项无效")
+        if relative in entries:
+            raise RuntimeError(f"独立来源登记表包含重复路径：{relative}")
+        entries[relative] = item
+    return entries
 
 
 def save_exif_orientation() -> Path:
@@ -65,9 +89,15 @@ def save_transparent() -> Path:
 
 def save_icc() -> Path:
     image = Image.new("RGB", (320, 240), (125, 165, 195))
-    profile = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    profile = bytearray(
+        ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    )
+    # LittleCMS writes the current time into the ICC header. Fix only that
+    # standard dateTimeNumber so an identical public fixture has one stable
+    # reviewed hash across runs; the profile ID remains unset by createProfile.
+    profile[24:36] = struct.pack(">6H", 2024, 1, 1, 0, 0, 0)
     path = OUT / "synthetic_srgb_icc.png"
-    image.save(path, icc_profile=profile)
+    image.save(path, icc_profile=bytes(profile))
     return path
 
 
@@ -127,13 +157,28 @@ def save_light_effects() -> list[tuple[Path, dict]]:
 
 
 def main() -> None:
+    reviewed = load_reviewed_provenance()
     sources = [save_exif_orientation(), save_transparent(), save_icc(), save_webp()]
     sources.extend(
-        require_fixed_public_fixture(relative, expected)
-        for relative, expected in FIXED_PUBLIC_FIXTURES.items()
+        require_fixed_public_fixture(relative, reviewed[relative]["sha256"])
+        for relative in FIXED_PUBLIC_FIXTURE_PATHS
     )
     effects = save_light_effects()
     sources.extend(path for path, _ in effects)
+
+    actual_paths = {
+        str(path.relative_to(ROOT)).replace("\\", "/"): path
+        for path in sources
+    }
+    if set(actual_paths) != set(reviewed):
+        missing = sorted(set(reviewed) - set(actual_paths))
+        unknown = sorted(set(actual_paths) - set(reviewed))
+        raise RuntimeError(
+            f"生成结果与独立来源登记表不一致；缺少={missing}；未知={unknown}"
+        )
+    for relative, path in actual_paths.items():
+        if sha256(path) != reviewed[relative]["sha256"]:
+            raise RuntimeError(f"生成结果哈希未通过独立来源审核：{relative}")
 
     manifest = {
         "version": "0.12.0",
@@ -142,12 +187,12 @@ def main() -> None:
         "origin": "程序生成，无真人、无私人素材、无外部版权依赖",
         "files": [
             {
-                "path": str(path.relative_to(ROOT)).replace("\\", "/"),
-                "sha256": sha256(path),
-                "license": "CC0-1.0",
-                "generated": True,
+                "path": relative,
+                "sha256": reviewed[relative]["sha256"],
+                "license": reviewed[relative]["license"],
+                "generated": reviewed[relative]["generated"],
             }
-            for path in sorted(sources)
+            for relative in sorted(actual_paths)
         ],
     }
     (ROOT / "examples" / "public_examples_manifest.json").write_text(

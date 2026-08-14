@@ -1,9 +1,14 @@
 import ast
 import json
 from pathlib import Path
+import struct
 
 from jsonschema import Draft202012Validator
+from PIL import Image
 
+from color_palette import __version__
+from color_palette.constants import DEFAULT_FACE_BACKEND, OFFICIAL_LANGUAGE
+from tools import generate_public_fixtures
 from tools.privacy_scan import scan
 from tools.validate_schemas import validate as validate_schemas
 from tools.validate_light_effect_dataset import validate
@@ -31,6 +36,38 @@ def test_analysis_schema_targets_v012():
     assert schema["properties"]["schema_version"]["const"] == "0.12.0"
 
 
+def test_version_and_release_contract_are_consistent():
+    expected = "0.12.0"
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    schema = json.loads((ROOT / "schemas" / "analysis.schema.json").read_text())
+    policy = json.loads((ROOT / "config" / "output_policy.json").read_text())
+    release = json.loads((ROOT / "release_manifest.json").read_text())
+    public_manifest = json.loads(
+        (ROOT / "examples" / "public_examples_manifest.json").read_text()
+    )
+    provenance = json.loads(
+        (ROOT / "examples" / "public_examples_provenance.json").read_text()
+    )
+
+    assert __version__ == expected
+    assert f'version = "{expected}"' in pyproject
+    assert schema["properties"]["schema_version"]["const"] == expected
+    assert policy["policy_version"] == expected
+    assert release["version"] == expected
+    assert public_manifest["version"] == expected
+    assert provenance["version"] == expected
+    assert release["official_language"] == OFFICIAL_LANGUAGE == "zh-CN"
+    assert release["face_backend"]["default"] == DEFAULT_FACE_BACKEND == "opencv"
+    assert release["face_backend"]["opencv_supported"] == ">=4.9,<5"
+    assert release["report"] == {
+        "format": "PNG",
+        "width": 1600,
+        "height": 1200,
+        "ratio": "4:3",
+        "generate_jpg": False,
+    }
+
+
 def test_all_public_examples_match_json_schemas():
     result = validate_schemas(ROOT)
     assert result["status"] == "通过", result["errors"]
@@ -47,6 +84,22 @@ def test_no_paid_model_runtime_dependency():
     ).casefold()
     assert "import openai" not in source
     assert "from openai" not in source
+
+
+def test_fixture_generator_cannot_write_reviewed_provenance_registry():
+    source = (ROOT / "tools" / "generate_public_fixtures.py").read_text(
+        encoding="utf-8"
+    )
+    assert "PROVENANCE_PATH.write_text" not in source
+    assert "load_reviewed_provenance" in source
+
+
+def test_generated_icc_fixture_has_deterministic_header_date(tmp_path, monkeypatch):
+    monkeypatch.setattr(generate_public_fixtures, "OUT", tmp_path)
+    path = generate_public_fixtures.save_icc()
+    with Image.open(path) as image:
+        profile = image.info["icc_profile"]
+    assert profile[24:36] == struct.pack(">6H", 2024, 1, 1, 0, 0, 0)
 
 
 def test_core_source_has_no_network_or_paid_model_client_imports():

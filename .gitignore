@@ -30,6 +30,8 @@ ci_output/
 doctor*.json
 privacy_scan*.json
 light_effect_validation*.json
+clean_wheel_smoke*.json
+wheel_smoke_output/
 
 .env
 .env.*

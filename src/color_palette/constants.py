@@ -22,30 +22,45 @@ OFFICIAL_MODULES = [
 FONT_CANDIDATES_REGULAR = [
     Path("/System/Library/Fonts/PingFang.ttc"),
     Path("/System/Library/Fonts/LanguageSupport/PingFang.ttc"),
+    Path("/Library/Fonts/PingFang.ttc"),
+    # Official cross-platform fallbacks must be tried before other OS fonts.
+    Path("/Library/Fonts/NotoSansCJKsc-Regular.otf"),
+    Path.home() / "Library/Fonts/NotoSansCJKsc-Regular.otf",
+    Path("C:/Windows/Fonts/NotoSansCJKsc-Regular.otf"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf"),
+    Path("/Library/Fonts/SourceHanSansSC-Regular.otf"),
+    Path.home() / "Library/Fonts/SourceHanSansSC-Regular.otf",
+    Path("C:/Windows/Fonts/SourceHanSansSC-Regular.otf"),
+    Path("/usr/share/fonts/opentype/source-han-sans/SourceHanSansSC-Regular.otf"),
+    # Last-resort system fonts still keep reports readable when the official
+    # open-source fallback families are unavailable.
     Path("/System/Library/Fonts/Hiragino Sans GB.ttc"),
     Path("/System/Library/Fonts/STHeiti Light.ttc"),
     Path("/System/Library/Fonts/Supplemental/Songti.ttc"),
     Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
-    Path("/Library/Fonts/PingFang.ttc"),
     Path("C:/Windows/Fonts/msyh.ttc"),
     Path("C:/Windows/Fonts/simhei.ttf"),
-    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
-    Path("/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf"),
-    Path("/usr/share/fonts/opentype/source-han-sans/SourceHanSansSC-Regular.otf"),
 ]
 FONT_CANDIDATES_BOLD = [
     Path("/System/Library/Fonts/PingFang.ttc"),
     Path("/System/Library/Fonts/LanguageSupport/PingFang.ttc"),
+    Path("/Library/Fonts/PingFang.ttc"),
+    Path("/Library/Fonts/NotoSansCJKsc-Bold.otf"),
+    Path.home() / "Library/Fonts/NotoSansCJKsc-Bold.otf",
+    Path("C:/Windows/Fonts/NotoSansCJKsc-Bold.otf"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJKsc-Bold.otf"),
+    Path("/Library/Fonts/SourceHanSansSC-Bold.otf"),
+    Path.home() / "Library/Fonts/SourceHanSansSC-Bold.otf",
+    Path("C:/Windows/Fonts/SourceHanSansSC-Bold.otf"),
+    Path("/usr/share/fonts/opentype/source-han-sans/SourceHanSansSC-Bold.otf"),
     Path("/System/Library/Fonts/Hiragino Sans GB.ttc"),
     Path("/System/Library/Fonts/STHeiti Medium.ttc"),
     Path("/System/Library/Fonts/Supplemental/Songti.ttc"),
     Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
-    Path("/Library/Fonts/PingFang.ttc"),
     Path("C:/Windows/Fonts/msyhbd.ttc"),
     Path("C:/Windows/Fonts/simhei.ttf"),
-    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"),
-    Path("/usr/share/fonts/opentype/noto/NotoSansCJKsc-Bold.otf"),
-    Path("/usr/share/fonts/opentype/source-han-sans/SourceHanSansSC-Bold.otf"),
 ]
 
 FACE_BACKENDS = {"auto", "opencv", "dlib", "none"}

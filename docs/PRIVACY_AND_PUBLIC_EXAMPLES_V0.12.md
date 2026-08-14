@@ -4,9 +4,13 @@
 
 - 只允许程序生成的合成图片；
 - 必须位于 `examples/`；
-- 必须登记在 `examples/public_examples_manifest.json`；
+- 必须先由人工审核并固定登记在 `examples/public_examples_provenance.json`；
+- 必须同时出现在生成器输出的 `examples/public_examples_manifest.json`；
 - 必须标记许可；
 - 不得包含 GPS EXIF。
+
+独立来源表由人工维护，样例生成器只有读取权限和校验职责，不会写入该表。
+因此，未知图片即使被写入生成清单，也不能通过隐私扫描。
 
 ## 私人图片
 
@@ -20,6 +24,9 @@
 ```bash
 python tools/privacy_scan.py . --output privacy_scan.json
 ```
+
+必须先扫描 checkout 原貌，再进行可选的公开夹具生成；生成后必须再次扫描，
+之后才能构建 Wheel 或发布。
 
 扫描会检查：
 

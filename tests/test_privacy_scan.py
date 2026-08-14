@@ -18,16 +18,46 @@ def _write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
 
-def _write_manifest(root: Path, entries: list[dict] | None = None) -> None:
+def _write_manifest(
+    root: Path,
+    entries: list[dict] | None = None,
+    *,
+    provenance_entries: list[dict] | None = None,
+    write_provenance: bool = True,
+) -> None:
+    manifest_entries = entries if entries is not None else []
     _write_json(
         root / "examples" / "public_examples_manifest.json",
         {
             "version": "0.12.0",
             "privacy": "公开",
             "license": "CC0-1.0",
-            "files": entries or [],
+            "origin": "程序生成，无真人、无私人素材、无外部版权依赖",
+            "files": manifest_entries,
         },
     )
+    if write_provenance:
+        reviewed_entries = (
+            manifest_entries if provenance_entries is None else provenance_entries
+        )
+        _write_json(
+            root / "examples" / "public_examples_provenance.json",
+            {
+                "version": "0.12.0",
+                "privacy": "公开",
+                "license": "CC0-1.0",
+                "review_policy": "人工审核固定来源",
+                "generated_by_tool": False,
+                "files": [
+                    {
+                        **entry,
+                        "reviewed": True,
+                        "origin": "测试用程序合成图片",
+                    }
+                    for entry in reviewed_entries
+                ],
+            },
+        )
 
 
 def _write_public_png(
@@ -62,6 +92,27 @@ def test_minimal_public_manifest_passes(tmp_path: Path):
     _write_manifest(tmp_path)
     result = scan(tmp_path)
     assert result["status"] == "通过", result["errors"]
+
+
+def test_missing_independent_provenance_registry_is_rejected(tmp_path: Path):
+    _write_manifest(tmp_path, write_provenance=False)
+    result = scan(tmp_path)
+    _assert_error(result, "缺少可读取的独立公开样例来源登记表")
+
+
+def test_self_registered_unknown_image_is_rejected(tmp_path: Path):
+    entry = _write_public_png(tmp_path)
+    _write_manifest(tmp_path, [entry], provenance_entries=[])
+    result = scan(tmp_path)
+    _assert_error(result, "公开示例未在独立来源登记表中审核")
+
+
+def test_manifest_hash_must_match_independent_provenance(tmp_path: Path):
+    entry = _write_public_png(tmp_path)
+    reviewed = {**entry, "sha256": "0" * 64}
+    _write_manifest(tmp_path, [entry], provenance_entries=[reviewed])
+    result = scan(tmp_path)
+    _assert_error(result, "公开示例清单与独立来源登记不一致")
 
 
 def test_file_directory_and_broken_symlinks_are_rejected(tmp_path: Path):

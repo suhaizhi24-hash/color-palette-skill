@@ -96,6 +96,7 @@ PUBLIC_JSON_ALLOWLIST = frozenset(
         "examples/light_effect_ground_truth.example.json",
         "examples/output_v012/synthetic_portrait_analysis.json",
         "examples/public_examples_manifest.json",
+        "examples/public_examples_provenance.json",
         "release_manifest.json",
         "schemas/analysis.schema.json",
         "schemas/ground_truth.schema.json",
@@ -112,6 +113,8 @@ PUBLIC_ANALYSIS_JSONS = frozenset(
     {"examples/output_v012/synthetic_portrait_analysis.json"}
 )
 PUBLIC_IMAGE_LICENSE = "CC0-1.0"
+PUBLIC_RELEASE_VERSION = "0.12.0"
+PUBLIC_MANIFEST_ORIGIN = "程序生成，无真人、无私人素材、无外部版权依赖"
 
 SECRET_PATTERNS = {
     "OpenAI格式密钥": re.compile(
@@ -343,10 +346,14 @@ def _load_manifest(root: Path, errors: list[str]) -> tuple[dict, dict[str, dict]
         if manifest is not None:
             errors.append("公开示例清单顶层必须是对象")
         return {}, {}
+    if manifest.get("version") != PUBLIC_RELEASE_VERSION:
+        errors.append(f"公开示例清单version必须为{PUBLIC_RELEASE_VERSION}")
     if manifest.get("privacy") != "公开":
         errors.append("公开示例清单privacy必须为公开")
     if manifest.get("license") != PUBLIC_IMAGE_LICENSE:
         errors.append(f"公开示例清单许可必须为{PUBLIC_IMAGE_LICENSE}")
+    if manifest.get("origin") != PUBLIC_MANIFEST_ORIGIN:
+        errors.append("公开示例清单origin不是允许的程序生成来源声明")
 
     items = manifest.get("files")
     if not isinstance(items, list):
@@ -378,6 +385,96 @@ def _load_manifest(root: Path, errors: list[str]) -> tuple[dict, dict[str, dict]
             continue
         allowed[relative] = item
     return manifest, allowed
+
+
+def _load_provenance(root: Path, errors: list[str]) -> tuple[dict, dict[str, dict]]:
+    """Load the human-reviewed allowlist that the generator cannot write."""
+
+    provenance_path = root / "examples" / "public_examples_provenance.json"
+    if not provenance_path.is_file() or provenance_path.is_symlink():
+        errors.append("缺少可读取的独立公开样例来源登记表")
+        return {}, {}
+    provenance = _load_json(provenance_path, "独立公开样例来源登记表", errors)
+    if not isinstance(provenance, dict):
+        if provenance is not None:
+            errors.append("独立公开样例来源登记表顶层必须是对象")
+        return {}, {}
+    if provenance.get("version") != PUBLIC_RELEASE_VERSION:
+        errors.append(f"独立来源登记表version必须为{PUBLIC_RELEASE_VERSION}")
+    if provenance.get("privacy") != "公开":
+        errors.append("独立来源登记表privacy必须为公开")
+    if provenance.get("license") != PUBLIC_IMAGE_LICENSE:
+        errors.append(f"独立来源登记表许可必须为{PUBLIC_IMAGE_LICENSE}")
+    if provenance.get("review_policy") != "人工审核固定来源":
+        errors.append("独立来源登记表缺少人工审核固定来源策略")
+    if provenance.get("generated_by_tool") is not False:
+        errors.append("独立来源登记表不得由样例生成程序自动写入")
+
+    items = provenance.get("files")
+    if not isinstance(items, list):
+        errors.append("独立来源登记表files必须是数组")
+        return provenance, {}
+
+    reviewed: dict[str, dict] = {}
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            errors.append(f"独立来源登记表第{index + 1}项不是对象")
+            continue
+        relative, path_error = _safe_manifest_path(root, item.get("path"))
+        display_path = item.get("path", f"第{index + 1}项")
+        if path_error:
+            errors.append(f"独立来源登记路径不安全：{display_path}：{path_error}")
+        if item.get("license") != PUBLIC_IMAGE_LICENSE:
+            errors.append(f"独立来源许可必须为{PUBLIC_IMAGE_LICENSE}：{display_path}")
+        if item.get("generated") is not True:
+            errors.append(f"独立来源不是程序生成图片：{display_path}")
+        if item.get("reviewed") is not True:
+            errors.append(f"独立来源未完成人工审核：{display_path}")
+        if not isinstance(item.get("origin"), str) or not item["origin"].strip():
+            errors.append(f"独立来源缺少具体来源说明：{display_path}")
+        digest = item.get("sha256")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            errors.append(f"独立来源SHA-256格式无效：{display_path}")
+        if relative is None:
+            continue
+        if Path(relative).suffix.lower() not in IMAGE_EXTENSIONS:
+            errors.append(f"独立来源包含非允许图片格式：{relative}")
+        if relative in reviewed:
+            errors.append(f"独立来源登记表包含重复路径：{relative}")
+            continue
+        reviewed[relative] = item
+    return provenance, reviewed
+
+
+def _verified_public_entries(
+    manifest_entries: dict[str, dict],
+    provenance_entries: dict[str, dict],
+    errors: list[str],
+) -> dict[str, dict]:
+    """Return only entries independently approved by both registries."""
+
+    verified: dict[str, dict] = {}
+    for relative in sorted(set(manifest_entries) | set(provenance_entries)):
+        manifest_item = manifest_entries.get(relative)
+        provenance_item = provenance_entries.get(relative)
+        if manifest_item is None:
+            errors.append(f"独立来源已审核但公开示例清单缺少图片：{relative}")
+            continue
+        if provenance_item is None:
+            errors.append(f"公开示例未在独立来源登记表中审核：{relative}")
+            continue
+        mismatched = [
+            field
+            for field in ("sha256", "license", "generated")
+            if manifest_item.get(field) != provenance_item.get(field)
+        ]
+        if mismatched:
+            errors.append(
+                f"公开示例清单与独立来源登记不一致（{','.join(mismatched)}）：{relative}"
+            )
+            continue
+        verified[relative] = manifest_item
+    return verified
 
 
 def _inspect_image_metadata(path: Path, relative: str, errors: list[str]) -> None:
@@ -487,7 +584,9 @@ def _validate_analysis(
 def scan(root: Path) -> dict:
     root = root.resolve()
     errors: list[str] = []
-    _, allowed = _load_manifest(root, errors)
+    _, manifest_entries = _load_manifest(root, errors)
+    _, provenance_entries = _load_provenance(root, errors)
+    allowed = _verified_public_entries(manifest_entries, provenance_entries, errors)
     checked: list[str] = []
     checked_text_count = 0
     font_file_count = 0

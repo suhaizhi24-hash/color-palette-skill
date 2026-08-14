@@ -20,7 +20,7 @@ python -m pip install . --no-build-isolation --no-deps
 
 - Pillow
 - NumPy
-- OpenCV Headless
+- OpenCV Headless 4.9 至 4.x（V0.12.0 暂不支持 5.x）
 - scikit-image
 - scikit-learn
 
