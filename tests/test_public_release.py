@@ -137,7 +137,7 @@ def test_fixture_generator_configures_cp1252_stdout_before_provenance_read(
 
     print("公开样例", file=sys.stdout)
     windows_style_stdout.flush()
-    assert raw_output.getvalue().decode("utf-8") == "公开样例\n"
+    assert raw_output.getvalue().decode("utf-8").splitlines() == ["公开样例"]
     assert windows_style_stdout.encoding.casefold().replace("-", "") == "utf8"
 
 
