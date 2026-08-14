@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Color Palette Analysis 0.12",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "ruleset_version",
+    "official_language",
+    "zero_token",
+    "source",
+    "analysis",
+    "tone",
+    "contrast",
+    "saturation",
+    "white_balance",
+    "tonal_palette",
+    "skin",
+    "light",
+    "effects",
+    "official_report",
+    "render_policy"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.12.0"},
+    "ruleset_version": {"const": "p1-rules-0.10.0"},
+    "official_language": {"const": "zh-CN"},
+    "zero_token": {"const": true},
+    "source": {
+      "type": "object",
+      "required": [
+        "filename",
+        "format",
+        "source_mode",
+        "width",
+        "height",
+        "orientation",
+        "sha256",
+        "orientation_applied",
+        "icc_present",
+        "icc_conversion_applied",
+        "working_space",
+        "has_alpha",
+        "valid_pixel_share",
+        "analysis_source",
+        "render_color_adjustment"
+      ],
+      "properties": {
+        "filename": {"type": "string"},
+        "format": {"type": ["string", "null"]},
+        "source_mode": {"type": "string"},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "orientation": {"enum": ["portrait", "landscape", "square"]},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "orientation_applied": {"type": "boolean"},
+        "icc_present": {"type": "boolean"},
+        "icc_conversion_applied": {"type": "boolean"},
+        "working_space": {"const": "sRGB"},
+        "has_alpha": {"type": "boolean"},
+        "valid_pixel_share": {"type": "number", "minimum": 0, "maximum": 1},
+        "analysis_source": {"const": "original"},
+        "render_color_adjustment": {"const": false}
+      }
+    },
+    "tone": {
+      "type": "object",
+      "required": ["code", "label", "l_percentiles", "shares", "clipping"]
+    },
+    "contrast": {
+      "type": "object",
+      "required": ["span_l", "level", "description"],
+      "properties": {"level": {"enum": ["低", "中", "高"]}}
+    },
+    "saturation": {
+      "type": "object",
+      "required": ["metric", "median", "level", "shares", "description"],
+      "properties": {"level": {"enum": ["低", "中", "高"]}}
+    },
+    "white_balance": {
+      "type": "object",
+      "required": [
+        "status",
+        "judgement",
+        "neutral_share",
+        "neutral_spatial_coverage"
+      ],
+      "properties": {
+        "neutral_share": {"type": "number", "minimum": 0, "maximum": 1},
+        "neutral_spatial_coverage": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "tonal_palette": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5
+    },
+    "skin": {
+      "type": "object",
+      "required": [
+        "status",
+        "face_count",
+        "detector",
+        "requested_backend",
+        "available_backends",
+        "backend_degraded",
+        "primary_anchor",
+        "secondary_anchor"
+      ],
+      "properties": {
+        "status": {"enum": ["单人", "多人不合并", "无人像", "未验证"]},
+        "requested_backend": {"enum": ["auto", "opencv", "dlib", "none"]},
+        "backend_degraded": {"type": "boolean"}
+      }
+    },
+    "render_policy": {
+      "type": "object",
+      "required": ["official_report_format", "generate_jpg", "render_color_adjustment"],
+      "properties": {
+        "official_report_format": {"const": "png"},
+        "generate_jpg": {"const": false},
+        "render_color_adjustment": {"const": false}
+      }
+    },
+    "official_report": {
+      "type": "object",
+      "required": [
+        "官方语言",
+        "官方模块",
+        "影调结构",
+        "明暗关系",
+        "色彩浓度",
+        "白平衡&色相",
+        "影调色卡",
+        "肤色锚点",
+        "素材特效&光线构成"
+      ],
+      "properties": {
+        "官方模块": {
+          "const": [
+            "影调结构",
+            "明暗关系",
+            "色彩浓度",
+            "白平衡&色相",
+            "影调色卡",
+            "肤色锚点",
+            "素材特效&光线构成"
+          ]
+        }
+      }
+    }
+  }
+}

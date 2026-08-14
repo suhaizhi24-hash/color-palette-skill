@@ -1,0 +1,84 @@
+{
+  "version": "0.12.0",
+  "release_channel": "open-source-beta-candidate",
+  "source_baseline": {
+    "archive": "color-palette-skill-v0.12.0-source.zip",
+    "sha256": "b73465c0671f366c1d9381f6112d4039fcaad1361225d9340f6f3386fbe57ddc",
+    "archive_committed": false
+  },
+  "official_language": "zh-CN",
+  "zero_token": true,
+  "official_outputs": [
+    "{filename}_analysis.json",
+    "{filename}_color_report.png"
+  ],
+  "report": {
+    "format": "PNG",
+    "width": 1600,
+    "height": 1200,
+    "ratio": "4:3",
+    "generate_jpg": false
+  },
+  "ruleset_version": "p1-rules-0.10.0",
+  "local_validation": {
+    "platform": "Darwin 25.5.0 arm64",
+    "python": "3.12.13",
+    "compileall": "PASS",
+    "pytest": "99 passed",
+    "json_schema": "3/3 PASS",
+    "public_golden": "1/1 PASS",
+    "privacy_scan": "PASS (80 candidates; 10 images; 70 text files; 0 fonts; 0 errors)",
+    "light_effect_dataset": "4/4 PASS",
+    "doctor": "PASS",
+    "wheel_build": "PASS",
+    "wheel_audit": "PASS (24 entries; 18 package files; 6 metadata files)",
+    "wheel_install": "PASS",
+    "pip_check": "PASS",
+    "wheel_cli_smoke": "PASS (exactly PNG + JSON; 1600x1200; 0 JPG)"
+  },
+  "ci": {
+    "configured": true,
+    "core_matrix": {
+      "os": [
+        "ubuntu-latest",
+        "macos-latest",
+        "windows-latest"
+      ],
+      "python": [
+        "3.10",
+        "3.12",
+        "3.13"
+      ],
+      "job_count": 9
+    },
+    "optional_dlib_job": true,
+    "remote_execution": "PENDING_PULL_REQUEST"
+  },
+  "face_backend": {
+    "default": "opencv",
+    "portable": "opencv",
+    "enhanced": "dlib optional",
+    "disabled": "none",
+    "advisory_not_core_gate": true
+  },
+  "wheel": {
+    "file": "color_palette_skill-0.12.0-py3-none-any.whl",
+    "size_bytes": 36821,
+    "sha256": "46f9900954212e7db7cfddd2f681c07020b7b1042ce97b666f6df8f72d41ed7d",
+    "pure_python": true,
+    "paid_model_runtime_dependency": false
+  },
+  "privacy": {
+    "private_images_in_public_source": false,
+    "private_ground_truth_in_public_source": false,
+    "font_files_in_public_source": false,
+    "secret_or_token_findings": 0,
+    "public_examples": "program-generated CC0-1.0"
+  },
+  "known_risks": [
+    "GitHub Actions跨平台矩阵需在Pull Request创建后取得远程结果",
+    "OpenCV基础人脸检测可能漏检侧脸、遮挡或多人场景",
+    "完全缺少CJK系统字体时报告仍会输出，但中文可读性取决于运行环境字体",
+    "dlib为可选增强，不属于核心发布门禁"
+  ]
+}

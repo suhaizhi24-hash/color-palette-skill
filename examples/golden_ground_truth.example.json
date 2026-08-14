@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "dataset": {
+    "name": "公开合成样片示例",
+    "version": "0.1.0",
+    "status": "示例",
+    "privacy": "公开",
+    "notes": "仅演示 Ground Truth 结构；真实私人样片不得进入公开源码包。"
+  },
+  "samples": [
+    {
+      "id": "synthetic_portrait",
+      "file_hint": "synthetic_portrait.png",
+      "sha256": "b2f832799674dbef3310dbefdb3f562f0d87a805910202646ae04a6067987f9b",
+      "expected": {
+        "tone.label": "中间调结构",
+        "contrast.level": "中",
+        "saturation.level": "中",
+        "white_balance.judgement": "轻微偏冷蓝"
+      },
+      "advisory": {
+        "skin.status": "无人像",
+        "skin.face_count": 0
+      },
+      "metrics": [
+        {
+          "path": "tone.l_percentiles.p50",
+          "value": 45.13,
+          "tolerance": 0.2
+        },
+        {
+          "path": "contrast.span_l",
+          "value": 60.89,
+          "tolerance": 0.2
+        },
+        {
+          "path": "saturation.median",
+          "value": 0.3582,
+          "tolerance": 0.01
+        }
+      ]
+    }
+  ]
+}
