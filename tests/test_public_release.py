@@ -1,14 +1,17 @@
 import ast
+import io
 import json
 from pathlib import Path
 import struct
+import sys
 
 from jsonschema import Draft202012Validator
 from PIL import Image
+import pytest
 
 from color_palette import __version__
 from color_palette.constants import DEFAULT_FACE_BACKEND, OFFICIAL_LANGUAGE
-from tools import generate_public_fixtures
+from tools import clean_wheel_smoke, generate_public_fixtures
 from tools.privacy_scan import scan
 from tools.validate_schemas import validate as validate_schemas
 from tools.validate_light_effect_dataset import validate
@@ -92,6 +95,50 @@ def test_fixture_generator_cannot_write_reviewed_provenance_registry():
     )
     assert "PROVENANCE_PATH.write_text" not in source
     assert "load_reviewed_provenance" in source
+
+
+def test_clean_wheel_smoke_help_is_utf8_when_stdout_starts_as_cp1252(
+    monkeypatch,
+):
+    raw_output = io.BytesIO()
+    windows_style_stdout = io.TextIOWrapper(raw_output, encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", windows_style_stdout)
+
+    with pytest.raises(SystemExit) as exit_info:
+        clean_wheel_smoke.main(["--help"])
+    assert exit_info.value.code == 0
+    windows_style_stdout.flush()
+
+    decoded = raw_output.getvalue().decode("utf-8")
+    assert "在干净虚拟环境安装Wheel并执行PNG+JSON回归" in decoded
+    assert windows_style_stdout.encoding.casefold().replace("-", "") == "utf8"
+
+
+def test_fixture_generator_configures_cp1252_stdout_before_provenance_read(
+    monkeypatch,
+):
+    class StopAfterStdioConfigured(Exception):
+        pass
+
+    raw_output = io.BytesIO()
+    windows_style_stdout = io.TextIOWrapper(raw_output, encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", windows_style_stdout)
+
+    def stop_before_generation():
+        raise StopAfterStdioConfigured
+
+    monkeypatch.setattr(
+        generate_public_fixtures,
+        "load_reviewed_provenance",
+        stop_before_generation,
+    )
+    with pytest.raises(StopAfterStdioConfigured):
+        generate_public_fixtures.main()
+
+    print("公开样例", file=sys.stdout)
+    windows_style_stdout.flush()
+    assert raw_output.getvalue().decode("utf-8") == "公开样例\n"
+    assert windows_style_stdout.encoding.casefold().replace("-", "") == "utf8"
 
 
 def test_generated_icc_fixture_has_deterministic_header_date(tmp_path, monkeypatch):

@@ -25,7 +25,7 @@
     "python": "3.12.13",
     "opencv": "4.14.0",
     "compileall": "PASS",
-    "pytest": "113 passed",
+    "pytest": "116 passed",
     "json_schema": "3/3 PASS",
     "public_golden": "1/1 PASS",
     "public_fixture_provenance": "PASS (independent human-reviewed registry; generator cannot write it)",
@@ -67,8 +67,8 @@
   },
   "wheel": {
     "file": "color_palette_skill-0.12.0-py3-none-any.whl",
-    "size_bytes": 37446,
-    "sha256": "a1e899a1afa65822ada4389cfcf0554fefd6007aeb27f99822b13945f6acb14e",
+    "size_bytes": 37781,
+    "sha256": "e6091cbf9f5f8ba075217d4dcabbf17031880a37fea1a45fd80f088e37108e7a",
     "pure_python": true,
     "paid_model_runtime_dependency": false
   },

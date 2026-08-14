@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 import subprocess
+import sys
 
 from PIL import Image, PngImagePlugin
 import pytest
 
+from tools.privacy_scan import main as privacy_main
 from tools.privacy_scan import scan, sha256
 
 
@@ -92,6 +95,23 @@ def test_minimal_public_manifest_passes(tmp_path: Path):
     _write_manifest(tmp_path)
     result = scan(tmp_path)
     assert result["status"] == "通过", result["errors"]
+
+
+def test_privacy_cli_prints_chinese_when_stdout_starts_as_cp1252(
+    tmp_path: Path,
+    monkeypatch,
+):
+    _write_manifest(tmp_path)
+    raw_output = io.BytesIO()
+    windows_style_stdout = io.TextIOWrapper(raw_output, encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", windows_style_stdout)
+
+    assert privacy_main([str(tmp_path)]) == 0
+    windows_style_stdout.flush()
+
+    decoded = raw_output.getvalue().decode("utf-8")
+    assert '"status": "通过"' in decoded
+    assert windows_style_stdout.encoding.casefold().replace("-", "") == "utf8"
 
 
 def test_missing_independent_provenance_registry_is_rejected(tmp_path: Path):

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse
 import hashlib
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import venv
+
+from color_palette.argparse_zh import ChineseArgumentParser
 
 
 VERIFY_CODE = r"""
@@ -122,7 +123,7 @@ def _run(command: list[str], *, cwd: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="在干净虚拟环境安装Wheel并执行PNG+JSON回归。")
+    parser = ChineseArgumentParser(description="在干净虚拟环境安装Wheel并执行PNG+JSON回归。")
     parser.add_argument("wheel", help="Wheel文件或只包含一个Wheel的目录")
     parser.add_argument("--input", required=True, help="公开合成输入图片")
     parser.add_argument("--schema", required=True, help="analysis JSON Schema")

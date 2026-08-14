@@ -9,6 +9,8 @@ import struct
 import numpy as np
 from PIL import Image, ImageCms, ImageDraw
 
+from color_palette.argparse_zh import configure_utf8_stdio
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "examples" / "public"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -157,6 +159,7 @@ def save_light_effects() -> list[tuple[Path, dict]]:
 
 
 def main() -> None:
+    configure_utf8_stdio()
     reviewed = load_reviewed_provenance()
     sources = [save_exif_orientation(), save_transparent(), save_icc(), save_webp()]
     sources.extend(

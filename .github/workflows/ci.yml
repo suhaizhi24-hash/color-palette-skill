@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+env:
+  # Windows hosted runners redirect Python stdout through cp1252 by default.
+  # Every official command emits Chinese, so keep the full workflow on UTF-8.
+  PYTHONUTF8: "1"
+
 jobs:
   core:
     name: ${{ matrix.os }} / Python ${{ matrix.python-version }}

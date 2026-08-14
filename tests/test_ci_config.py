@@ -16,6 +16,7 @@ def test_ci_contains_cross_platform_matrix_and_wheel_smoke():
     assert "Clean virtual environment Wheel install and CLI smoke" in text
     assert "clean_wheel_smoke.py" in text
     assert "--force-reinstall" not in text
+    assert 'PYTHONUTF8: "1"' in text
     assert "color-palette-doctor" in text
     assert "privacy_scan.py" in text
     assert "validate_schemas.py" in text

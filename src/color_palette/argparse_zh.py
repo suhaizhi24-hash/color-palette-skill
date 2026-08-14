@@ -2,6 +2,25 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
+
+
+def configure_utf8_stdio() -> None:
+    """Keep Chinese CLI output writable when Windows redirects to cp1252."""
+
+    for stream in (sys.stdout, sys.stderr):
+        encoding = (getattr(stream, "encoding", None) or "").casefold().replace("-", "")
+        if encoding == "utf8":
+            continue
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(encoding="utf-8")
+        except (OSError, ValueError):
+            # In-memory/captured streams may not support reconfiguration. The
+            # caller can still consume their Unicode text directly.
+            pass
 
 
 class ChineseArgumentParser(argparse.ArgumentParser):
@@ -14,6 +33,10 @@ class ChineseArgumentParser(argparse.ArgumentParser):
         "optional arguments:": "选项：",
         "show this help message and exit": "显示帮助并退出",
     }
+
+    def __init__(self, *args, **kwargs) -> None:
+        configure_utf8_stdio()
+        super().__init__(*args, **kwargs)
 
     def format_help(self) -> str:
         text = super().format_help()
