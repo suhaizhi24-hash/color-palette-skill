@@ -27,6 +27,8 @@ def test_ci_contains_cross_platform_matrix_and_wheel_smoke():
     assert "*.jpg" in wheel_smoke
     assert "*.jpeg" in wheel_smoke
     assert "optional-dlib" in text
+    assert text.count("persist-credentials: false") == 2
+    assert "dist/*.whl" in text
 
 
 def test_ci_scans_checkout_before_build_or_fixture_generation():

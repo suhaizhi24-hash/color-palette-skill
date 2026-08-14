@@ -54,7 +54,7 @@ def official_report(analysis: dict) -> dict:
         else:
             skin_lines = ["肤色样本不足，不输出肤色锚点数值。"]
     else:
-        skin_lines = ["未检测到可用于稳定肤色分析的单人脸，不输出肤色数值。"]
+        skin_lines = ["未检测到可用于稳定肤色分析的单人脸，样本不足，不输出肤色数值。"]
 
     effects = analysis["effects"]
     light = analysis["light"]

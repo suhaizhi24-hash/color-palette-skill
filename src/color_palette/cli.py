@@ -31,7 +31,12 @@ def build_parser() -> ChineseArgumentParser:
         default=1600,
         help="分析副本最长边，默认1600；不改变原图显示色彩",
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="显示版本号并退出",
+    )
     return parser
 
 

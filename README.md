@@ -48,8 +48,8 @@ color-palette photo.jpg --output ./result
 color-palette photo.jpg --output ./result --face-backend opencv
 ```
 
-V0.12.0 的兼容范围为 OpenCV 4.9 至 4.x（依赖约束 `>=4.9,<5`）。
-OpenCV 5.x 尚未纳入兼容性承诺，待完成独立兼容测试后再放开上限。
+V0.12.0 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
+OpenCV 4.x 运行完整测试。OpenCV 5.x 尚未纳入兼容性承诺，待完成独立兼容测试后再放开上限。
 
 其他选项：
 
@@ -68,14 +68,14 @@ color-palette-doctor
 
 诊断内容包括：
 
-- JPG / PNG / WebP 支持
+- JPG / PNG / WebP 输入读取能力
 - LittleCMS / ICC 色彩管理
 - 中文字体
 - OpenCV / dlib 人脸后端
 - Python 与主要依赖版本
 - Zero-token 与 PNG-only 输出契约
 
-## 支持格式与原图保真
+## 支持的输入格式与原图保真
 
 - JPG / JPEG
 - PNG：完全透明像素不参与分析
@@ -121,4 +121,10 @@ V0.12.0：首个开源 Beta 候选版本。
 
 仓库配置了 Ubuntu、macOS、Windows 与 Python 3.10、3.12、3.13 的 GitHub Actions 矩阵。具体通过状态以当前 Pull Request 的 Actions 结果为准。
 
-项目采用 [Apache-2.0](LICENSE) 许可证。贡献前请阅读 [贡献指南](CONTRIBUTING.md) 与 [行为准则](CODE_OF_CONDUCT.md)。
+项目采用 [Apache-2.0](LICENSE) 许可证。发布准备请阅读
+[v0.12.0 Beta Release Notes](docs/RELEASE_NOTES_V0.12.0.md)、
+[合并后发布清单](docs/POST_MERGE_RELEASE_CHECKLIST_V0.12.md) 与
+[真实用户 Beta 测试计划](docs/BETA_TEST_PLAN_V0.12.md)。
+
+贡献前请阅读 [贡献指南](CONTRIBUTING.md) 与 [行为准则](CODE_OF_CONDUCT.md)；
+安全问题和使用支持分别参见 [安全政策](SECURITY.md) 与 [支持说明](SUPPORT.md)。

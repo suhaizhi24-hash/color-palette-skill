@@ -36,7 +36,7 @@ GitHub Actions 配置：
 
 默认：OpenCV。`auto` 与 `dlib` 为可选增强入口；dlib 不可用或运行失败时自动使用 OpenCV。
 
-V0.12.0 的核心兼容范围为 OpenCV 4.9 至 4.x（`>=4.9,<5`）。
+V0.12.0 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的 OpenCV 4.x 运行完整测试。
 OpenCV 5.x 暂未纳入兼容性承诺。
 
 dlib 为可选增强后端，单独设置非阻塞 CI 任务。dlib 缺失或运行失败时不会中断核心色彩分析。

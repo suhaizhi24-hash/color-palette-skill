@@ -14,7 +14,7 @@ authors = [{name = "Color Palette Skill Contributors"}]
 dependencies = [
   "Pillow>=10.0",
   "numpy>=1.26",
-  "opencv-python-headless>=4.9,<5",
+  "opencv-python-headless>=4.14,<5",
   "scikit-image>=0.22",
   "scikit-learn>=1.4"
 ]

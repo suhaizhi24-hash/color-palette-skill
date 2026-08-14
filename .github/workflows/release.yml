@@ -1,0 +1,173 @@
+name: release-candidate
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  verify-and-package:
+    name: 验证并构建发布候选 Wheel
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出当前发布来源
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 安装 Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 校验手动运行来源或 Tag 版本
+        env:
+          RELEASE_EVENT: ${{ github.event_name }}
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_REF_NAME: ${{ github.ref_name }}
+        run: >-
+          python -c "import os, tomllib;
+          from pathlib import Path;
+          version=tomllib.loads(Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'];
+          event=os.environ['RELEASE_EVENT'];
+          ref=os.environ['RELEASE_REF'];
+          ref_name=os.environ['RELEASE_REF_NAME'];
+          assert event != 'workflow_dispatch' or ref == 'refs/heads/main',
+          f'手动发布候选只能从main运行，当前为{ref}';
+          assert event != 'push' or (ref.startswith('refs/tags/') and ref_name == 'v' + version),
+          f'Tag与项目版本不一致：{ref_name} / {version}'"
+
+      - name: 安装隐私扫描最小依赖
+        run: python -m pip install --upgrade pip "Pillow>=10.0"
+
+      - name: 安装项目前扫描发布候选源码
+        env:
+          PYTHONPATH: src
+        run: python tools/privacy_scan.py . --output privacy_scan_release.json
+
+      - name: 安装系统中文字体
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
+
+      - name: 安装项目与发布门禁依赖
+        run: python -m pip install -e ".[dev]"
+
+      - name: 编译检查
+        run: python -m compileall -q src tests tools
+
+      - name: 校验 OpenCV 4.x 契约
+        run: >-
+          python -c "import cv2;
+          major,minor=map(int,cv2.__version__.split('.')[:2]);
+          print('OpenCV', cv2.__version__);
+          assert major == 4 and minor >= 14,
+          f'V0.12.0要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
+
+      - name: 运行完整测试
+        run: python -m pytest -q
+
+      - name: 再次执行隐私扫描
+        run: python tools/privacy_scan.py . --output privacy_scan_release.json
+
+      - name: 校验 JSON Schema
+        run: python tools/validate_schemas.py . --output schema_validation_release.json
+
+      - name: 显式检查 Zero-token 与网络运行时依赖
+        run: >-
+          python -m pytest -q
+          tests/test_public_release.py::test_no_paid_model_runtime_dependency
+          tests/test_public_release.py::test_core_source_has_no_network_or_paid_model_client_imports
+          tests/test_public_release.py::test_cli_has_no_api_key_or_token_option
+
+      - name: 运行格式与色彩管理回归
+        run: python -m pytest -q tests/test_formats.py tests/test_release_formats.py
+
+      - name: 运行公开 Golden Dataset
+        run: >-
+          color-palette-golden examples/synthetic_portrait.png
+          --ground-truth examples/golden_ground_truth.example.json
+          --output golden_validation_report.json
+          --strict-missing
+          --face-backend none
+
+      - name: 校验公开光线与素材特效数据集
+        run: >-
+          python tools/validate_light_effect_dataset.py
+          --root .
+          --output light_effect_validation_release.json
+
+      - name: 检查 CLI 帮助与本地环境
+        run: |
+          color-palette --help
+          color-palette-doctor --output doctor_release.json
+
+      - name: 固定候选构建时间戳
+        shell: bash
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
+
+      - name: 构建 Wheel
+        run: python -m build --wheel
+
+      - name: 审计 Wheel
+        run: >-
+          python tools/audit_wheel.py dist
+          --expected-version 0.12.0
+          --output wheel_audit_release.json
+
+      - name: 全新虚拟环境安装与 CLI PNG + JSON 烟雾测试
+        run: >-
+          python tools/clean_wheel_smoke.py dist
+          --input examples/public/synthetic_srgb_icc.png
+          --schema schemas/analysis.schema.json
+          --output ci_output
+          --result clean_wheel_smoke_release.json
+
+      - name: 反向确认没有 JPG 或 JPEG 输出
+        run: >-
+          python -c "from pathlib import Path;
+          files=[path for path in Path('ci_output').rglob('*')
+          if path.is_file() and path.suffix.casefold() in {'.jpg', '.jpeg'}];
+          assert not files, files;
+          print('JPG/JPEG输出数量：0')"
+
+      - name: 记录 Wheel SHA-256 与源码 commit
+        run: >-
+          python -c "import hashlib, subprocess;
+          from pathlib import Path;
+          wheels=sorted(Path('dist').glob('*.whl'));
+          assert len(wheels) == 1, wheels;
+          wheel=wheels[0];
+          digest=hashlib.sha256(wheel.read_bytes()).hexdigest();
+          commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip();
+          (Path('dist') / 'SHA256SUMS.txt').write_text(digest + '  ' + wheel.name + '\n', encoding='utf-8');
+          (Path('dist') / 'SOURCE_COMMIT.txt').write_text(commit + '\n', encoding='utf-8');
+          print(wheel.name, digest, commit)"
+
+      - name: 上传已验证的发布候选 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: color-palette-skill-v0.12.0-${{ github.sha }}
+          path: |
+            dist/*.whl
+            dist/SHA256SUMS.txt
+            dist/SOURCE_COMMIT.txt
+            privacy_scan_release.json
+            schema_validation_release.json
+            golden_validation_report.json
+            light_effect_validation_release.json
+            doctor_release.json
+            wheel_audit_release.json
+            clean_wheel_smoke_release.json
+            ci_output/
+          if-no-files-found: error
+          retention-days: 14

@@ -24,6 +24,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -52,9 +54,10 @@ jobs:
       - name: Verify OpenCV 4.x compatibility contract
         run: >-
           python -c "import cv2;
-          major=int(cv2.__version__.split('.')[0]);
+          major,minor=map(int,cv2.__version__.split('.')[:2]);
           print('OpenCV', cv2.__version__);
-          assert major==4, f'V0.12.0 requires OpenCV 4.x, got {cv2.__version__}'"
+          assert major==4 and minor>=14,
+          f'V0.12.0 requires OpenCV >=4.14,<5, got {cv2.__version__}'"
 
       - name: Validate JSON Schema
         run: python tools/validate_schemas.py .
@@ -99,6 +102,7 @@ jobs:
         with:
           name: diagnostics-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
+            dist/*.whl
             doctor.json
             privacy_scan.json
             light_effect_validation.json
@@ -113,6 +117,8 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

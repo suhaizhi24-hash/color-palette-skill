@@ -61,7 +61,7 @@ def test_version_and_release_contract_are_consistent():
     assert provenance["version"] == expected
     assert release["official_language"] == OFFICIAL_LANGUAGE == "zh-CN"
     assert release["face_backend"]["default"] == DEFAULT_FACE_BACKEND == "opencv"
-    assert release["face_backend"]["opencv_supported"] == ">=4.9,<5"
+    assert release["face_backend"]["opencv_supported"] == ">=4.14,<5"
     assert release["report"] == {
         "format": "PNG",
         "width": 1600,

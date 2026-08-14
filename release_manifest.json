@@ -20,23 +20,22 @@
     "generate_jpg": false
   },
   "ruleset_version": "p1-rules-0.10.0",
-  "local_validation": {
-    "platform": "Darwin 25.5.0 arm64",
-    "python": "3.12.13",
-    "opencv": "4.14.0",
-    "compileall": "PASS",
-    "pytest": "116 passed",
-    "json_schema": "3/3 PASS",
-    "public_golden": "1/1 PASS",
-    "public_fixture_provenance": "PASS (independent human-reviewed registry; generator cannot write it)",
-    "privacy_scan": "PASS (83 candidates; 10 images; 73 text files; 0 fonts; 0 errors)",
-    "light_effect_dataset": "4/4 PASS",
-    "doctor": "PASS (CJK font available; no emergency fallback)",
-    "wheel_build": "PASS",
-    "wheel_audit": "PASS (24 entries; 18 package files; 6 metadata files)",
-    "wheel_install": "PASS (fresh temporary virtual environment)",
-    "pip_check": "PASS",
-    "wheel_cli_smoke": "PASS (exactly PNG + JSON; 1600x1200; 0 JPG/JPEG; Schema valid; input unchanged)"
+  "validation_policy": {
+    "evidence_scope": "Pull Request最新commit",
+    "source_of_truth": "GitHub Actions检查与同一次工作流生成的Artifact",
+    "required_local_gates": [
+      "Python compileall",
+      "pytest",
+      "JSON Schema校验",
+      "公开Golden Dataset",
+      "独立来源登记与隐私扫描",
+      "Wheel构建与内容审计",
+      "全新虚拟环境安装与pip check",
+      "CLI仅生成PNG与JSON且JPG/JPEG数量为0",
+      "OpenAI/API与网络运行时必要依赖扫描"
+    ],
+    "tracked_result_snapshots": false,
+    "reason": "避免提交后的测试数字、commit SHA和Wheel哈希在清单中失效"
   },
   "ci": {
     "configured": true,
@@ -54,18 +53,16 @@
       "job_count": 9
     },
     "optional_dlib_job": true,
-    "remote_execution": {
-      "status": "PASS",
-      "run_url": "https://github.com/suhaizhi24-hash/color-palette-skill/actions/runs/31780634742",
-      "validated_head_sha": "562759626090c64cef3adbe7392a09dd9069af92",
-      "core_matrix": "9/9 PASS",
-      "optional_dlib": "PASS"
-    }
+    "latest_commit_required": true,
+    "core_matrix_required": "9/9 PASS",
+    "release_candidate_workflow": ".github/workflows/release.yml",
+    "release_creation": "仓库管理员在合并后手动创建GitHub Pre-release"
   },
   "face_backend": {
     "default": "opencv",
     "portable": "opencv",
-    "opencv_supported": ">=4.9,<5",
+    "opencv_supported": ">=4.14,<5",
+    "opencv_test_policy": "核心CI断言实际解析版本为>=4.14且<5并运行完整测试",
     "opencv_5_supported": false,
     "enhanced": "dlib optional",
     "disabled": "none",
@@ -73,8 +70,8 @@
   },
   "wheel": {
     "file": "color_palette_skill-0.12.0-py3-none-any.whl",
-    "size_bytes": 37781,
-    "sha256": "e6091cbf9f5f8ba075217d4dcabbf17031880a37fea1a45fd80f088e37108e7a",
+    "built_from": "触发工作流的github.sha",
+    "sha256_evidence": "由同次Release Artifact工作流计算并随Wheel上传",
     "pure_python": true,
     "paid_model_runtime_dependency": false
   },

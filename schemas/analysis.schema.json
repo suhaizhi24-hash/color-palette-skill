@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Color Palette Analysis 0.12",
+  "title": "Color Palette Analysis 0.12.0",
   "type": "object",
   "required": [
     "schema_version",

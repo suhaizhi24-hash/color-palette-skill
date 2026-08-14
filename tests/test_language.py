@@ -29,6 +29,7 @@ def test_required_phrases():
     report = official_report(analysis)
     assert report["明暗关系"][0] == "明暗关系大，对比度高。"
     assert report["色彩浓度"][0] == "色彩饱和度高。"
+    assert "样本不足" in report["肤色锚点"][0]
     visible = _visible_text(report)
     for forbidden in ["依据", "数据依据", "内部状态", "Schema", "研发说明", "算法降级说明"]:
         assert forbidden not in visible
@@ -82,3 +83,5 @@ def test_cli_help_uses_chinese_headings():
         assert "usage:" not in help_text
         assert "options:" not in help_text
         assert "show this help message and exit" not in help_text
+    assert "show program's version number and exit" not in build_main_parser().format_help()
+    assert "显示版本号并退出" in build_main_parser().format_help()

@@ -24,16 +24,21 @@
 - [x] 密钥、Token、字体与私人素材扫描
 - [x] 干净虚拟环境 Wheel 安装与 PNG + JSON 烟雾测试
 - [x] JPG/JPEG 零生成检查
+- [x] v0.12.0 Beta Release Notes 已准备
+- [x] 合并后发布清单已准备
+- [x] 真实用户 Beta 测试计划已准备
 
-## 发布前仍需远程或实机确认
+## 发布前按目标 commit 动态确认
 
-- [ ] GitHub Actions Ubuntu 全矩阵通过
-- [ ] GitHub Actions macOS 全矩阵通过
-- [ ] GitHub Actions Windows 全矩阵通过
+以下项目是每次候选 commit 都要重新核验的发布模板，不代表工作流文件存在即已通过；实际状态以目标 commit 对应的 GitHub Actions 和实机证据为准。
+
+- [ ] 最新 commit 的 GitHub Actions Ubuntu 全矩阵通过
+- [ ] 最新 commit 的 GitHub Actions macOS 全矩阵通过
+- [ ] 最新 commit 的 GitHub Actions Windows 全矩阵通过
 - [ ] Windows 中文字体与 PNG 报告检查
 - [ ] macOS PingFang SC 报告检查
-- [ ] 可选 dlib CI 结果记录
-- [ ] 发布页版本说明
+- [ ] 最新 commit 的可选 dlib CI 结果已记录
+- [ ] Release Notes 已完成人工审阅
 - [ ] 首个公开 GitHub Release
 
 ## 非阻塞但需继续推进
