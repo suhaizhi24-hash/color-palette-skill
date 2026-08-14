@@ -54,7 +54,13 @@
       "job_count": 9
     },
     "optional_dlib_job": true,
-    "remote_execution": "PENDING_PULL_REQUEST"
+    "remote_execution": {
+      "status": "PASS",
+      "run_url": "https://github.com/suhaizhi24-hash/color-palette-skill/actions/runs/31780634742",
+      "validated_head_sha": "562759626090c64cef3adbe7392a09dd9069af92",
+      "core_matrix": "9/9 PASS",
+      "optional_dlib": "PASS"
+    }
   },
   "face_backend": {
     "default": "opencv",
@@ -81,7 +87,6 @@
     "generator_writes_provenance": false
   },
   "known_risks": [
-    "GitHub Actions跨平台矩阵需在Pull Request创建后取得远程结果",
     "OpenCV基础人脸检测可能漏检侧脸、遮挡或多人场景",
     "完全缺少CJK系统字体时报告仍会输出，但中文可读性取决于运行环境字体",
     "dlib为可选增强，不属于核心发布门禁"
