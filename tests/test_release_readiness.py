@@ -67,7 +67,7 @@ def test_release_workflow_runs_complete_gates_in_safe_order():
         "validate_light_effect_dataset.py",
         "color-palette --help",
         "color-palette-doctor",
-        "--expected-version 0.12.0",
+        "--expected-version 0.13.0",
         "SOURCE_DATE_EPOCH",
         "{'.jpg', '.jpeg'}",
     )

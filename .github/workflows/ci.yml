@@ -57,7 +57,7 @@ jobs:
           major,minor=map(int,cv2.__version__.split('.')[:2]);
           print('OpenCV', cv2.__version__);
           assert major==4 and minor>=14,
-          f'V0.12.0 requires OpenCV >=4.14,<5, got {cv2.__version__}'"
+          f'V0.13.0 requires OpenCV >=4.14,<5, got {cv2.__version__}'"
 
       - name: Validate JSON Schema
         run: python tools/validate_schemas.py .
@@ -83,7 +83,7 @@ jobs:
       - name: Audit built wheel
         run: >-
           python tools/audit_wheel.py dist
-          --expected-version 0.12.0
+          --expected-version 0.13.0
           --output wheel_audit.json
 
       - name: Clean virtual environment Wheel install and CLI smoke

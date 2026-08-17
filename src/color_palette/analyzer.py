@@ -10,6 +10,7 @@ from .colors import dominant_tonal_palette, hue_name
 from .copy import official_report
 from .faces import analyze_skin_anchors, detect_faces
 from .io import LoadedImage, load_image
+from .material_fx import analyze_material_fx, legacy_effects
 from .rules import (
     RULESET_VERSION,
     clipping_class,
@@ -129,15 +130,11 @@ def analyze(
         "ratio": {"低": "低", "中": "中", "高": "高"}[contrast],
         "status": "P1-C待校准",
     }
-    effects = {
-        "detected": [],
-        "not_obvious": [],
-        "conclusion": "未识别到可稳定确认的素材特效。",
-        "status": "保守降级",
-    }
+    material_effects = analyze_material_fx(rgb, working_mask)
+    effects = legacy_effects(material_effects)
 
     analysis = {
-        "schema_version": "0.12.0",
+        "schema_version": "0.13.0",
         "ruleset_version": RULESET_VERSION,
         "official_language": "zh-CN",
         "zero_token": True,
@@ -179,6 +176,7 @@ def analyze(
         "tonal_palette": palette,
         "skin": skin,
         "light": light,
+        "material_effects": material_effects,
         "effects": effects,
         "render_policy": {
             "official_report_format": "png",

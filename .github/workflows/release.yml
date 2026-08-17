@@ -71,7 +71,7 @@ jobs:
           major,minor=map(int,cv2.__version__.split('.')[:2]);
           print('OpenCV', cv2.__version__);
           assert major == 4 and minor >= 14,
-          f'V0.12.0要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
+          f'V0.13.0要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
 
       - name: 运行完整测试
         run: python -m pytest -q
@@ -121,7 +121,7 @@ jobs:
       - name: 审计 Wheel
         run: >-
           python tools/audit_wheel.py dist
-          --expected-version 0.12.0
+          --expected-version 0.13.0
           --output wheel_audit_release.json
 
       - name: 全新虚拟环境安装与 CLI PNG + JSON 烟雾测试
@@ -156,7 +156,7 @@ jobs:
       - name: 上传已验证的发布候选 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: color-palette-skill-v0.12.0-${{ github.sha }}
+          name: color-palette-skill-v0.13.0-${{ github.sha }}
           path: |
             dist/*.whl
             dist/SHA256SUMS.txt

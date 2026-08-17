@@ -5,8 +5,12 @@ import hashlib
 import json
 from pathlib import Path
 
+import numpy as np
+
 from jsonschema import Draft202012Validator
 from color_palette.argparse_zh import ChineseArgumentParser
+from color_palette.io import load_image
+from color_palette.material_fx import analyze_material_fx
 
 
 def sha256(path: Path) -> str:
@@ -22,6 +26,7 @@ def validate(root: Path, dataset_path: Path, schema_path: Path) -> dict:
         for error in errors
     ]
     checked = 0
+    material_fx_checked = 0
     for sample in dataset.get("samples", []):
         image_path = root / sample["file"]
         checked += 1
@@ -29,11 +34,24 @@ def validate(root: Path, dataset_path: Path, schema_path: Path) -> dict:
             issues.append(f"样本不存在：{sample['file']}")
         elif sha256(image_path) != sample["sha256"]:
             issues.append(f"样本哈希不一致：{sample['file']}")
+        else:
+            loaded = load_image(image_path)
+            rgb = np.asarray(loaded.rgb_image, dtype=np.uint8)
+            result = analyze_material_fx(rgb, loaded.valid_mask)
+            actual = [item["display_name"] for item in result["items"]]
+            expected = sample["expected"]["素材特效"]
+            material_fx_checked += 1
+            if actual != expected:
+                issues.append(
+                    f"Material FX不一致：{sample['file']}；"
+                    f"期望={expected}；实际={actual}"
+                )
     return {
         "status": "通过" if not issues else "失败",
         "checked_sample_count": checked,
+        "material_fx_checked_sample_count": material_fx_checked,
         "issues": issues,
-        "note": "本轮仅验证人工标签数据集完整性；P1-C算法判定尚未启用为正式门禁。",
+        "note": "V0.13对公开合成样例执行Material FX算法回归；光线标签仍只校验Schema与文件完整性。",
     }
 
 

@@ -10,10 +10,10 @@
     "span_l": 60.89
   },
   "effects": {
-    "conclusion": "未识别到可稳定确认的素材特效。",
+    "conclusion": "未发现明显素材特效",
     "detected": [],
     "not_obvious": [],
-    "status": "保守降级"
+    "status": "未发现明显"
   },
   "font_policy": {
     "emergency_fallback": false,
@@ -28,6 +28,39 @@
     "ratio": "中",
     "source": "暂不判定",
     "status": "P1-C待校准"
+  },
+  "material_effects": {
+    "diagnostics": {
+      "candidate_count": 0,
+      "roi_strategy": {
+        "edge": [
+          "r4c4",
+          "r4c1",
+          "r3c4",
+          "r4c2",
+          "r4c3",
+          "r3c1",
+          "r2c3",
+          "r2c2"
+        ],
+        "face": "肤色ROI由独立肤色模块提供；Material FX不以平滑肤色单独判定模糊",
+        "flat": [
+          "r2c1",
+          "r2c4",
+          "r1c1",
+          "r1c4",
+          "r3c2",
+          "r3c3",
+          "r3c1",
+          "r3c4"
+        ],
+        "highlight": "Luma>=235及其邻域"
+      }
+    },
+    "items": [],
+    "ruleset_version": "material-fx-0.13.0",
+    "status": "未发现明显",
+    "summary": "未发现明显素材特效"
   },
   "official_language": "zh-CN",
   "official_report": {
@@ -142,13 +175,14 @@
         "光质": "暂不判定"
       },
       "素材特效": {
-        "已识别": [],
-        "未发现明显": [],
-        "结论": "未识别到可稳定确认的素材特效。"
+        "标签": [
+          "未发现明显素材特效"
+        ],
+        "结论": "未发现明显素材特效"
       }
     },
     "肤色锚点": [
-      "肤色分析未启用，不输出肤色锚点数值。"
+      "未检测到可用于稳定肤色分析的单人脸，样本不足，不输出肤色数值。"
     ],
     "色彩浓度": [
       "色彩饱和度中。",
@@ -182,19 +216,19 @@
       "mid": 0.377194
     }
   },
-  "schema_version": "0.12.0",
+  "schema_version": "0.13.0",
   "skin": {
     "available_backends": [
       "opencv"
     ],
     "backend_degraded": false,
-    "backend_note": "肤色分析已显式关闭",
-    "detector": "disabled",
-    "face_count": null,
+    "backend_note": "",
+    "detector": "opencv",
+    "face_count": 0,
     "primary_anchor": null,
-    "requested_backend": "none",
+    "requested_backend": "opencv",
     "secondary_anchor": null,
-    "status": "未验证"
+    "status": "无人像"
   },
   "source": {
     "analysis_source": "original",
