@@ -1,0 +1,34 @@
+{
+  "policy_version": "0.12.0",
+  "official_language": "zh-CN",
+  "official_image_format": "png",
+  "machine_data_format": "json",
+  "generate_jpg": false,
+  "report": {
+    "width": 1600,
+    "height": 1200,
+    "ratio": "4:3"
+  },
+  "official_modules": [
+    "影调结构",
+    "明暗关系",
+    "色彩浓度",
+    "白平衡&色相",
+    "影调色卡",
+    "肤色锚点",
+    "素材特效&光线构成"
+  ],
+  "face_backend_default": "opencv",
+  "supported_input_formats": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp"
+  ],
+  "color_management": {
+    "working_space": "sRGB",
+    "exif_orientation": true,
+    "icc_conversion": true,
+    "transparent_pixels": "alpha=0 ignored"
+  }
+}

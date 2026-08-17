@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Light and Effect Ground Truth 1.0",
+  "type": "object",
+  "required": ["schema_version", "dataset", "samples"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "dataset": {
+      "type": "object",
+      "required": ["name", "version", "privacy", "status"],
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "privacy": {"const": "公开"},
+        "status": {"type": "string"}
+      }
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "file", "sha256", "expected"],
+        "properties": {
+          "id": {"type": "string"},
+          "file": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "expected": {
+            "type": "object",
+            "required": ["光源", "光质", "光比", "素材特效"],
+            "properties": {
+              "光源": {"type": "string"},
+              "光质": {"type": "string"},
+              "光比": {"enum": ["低", "中", "高"]},
+              "素材特效": {
+                "type": "array",
+                "items": {"type": "string"},
+                "uniqueItems": true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
