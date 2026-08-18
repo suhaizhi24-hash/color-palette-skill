@@ -2,6 +2,14 @@
 
 Local-first、Zero-token 的中文照片色彩分析工具。项目只分析照片，不自动调色、不套用 LUT、不调用 OpenAI API 或其他付费大模型接口，也不要求 API Key。
 
+## 摄影知识 Consumer
+
+本项目从中央摄影知识树读取色彩科学、调色、LUT、模拟边界、Rule ID 与 Evidence Status；中央知识树负责“知道什么”，本项目负责“如何分析和输出”。集成不复制中央 Memory，也不改变现有 Zero-token 图片分析与正式报告协议。
+
+- Consumer 合同：[Photography Knowledge Consumer Contract](docs/PHOTOGRAPHY_KNOWLEDGE_CONTRACT.md)
+- 本地集成检查：`python tools/photography_knowledge_smoke.py`
+- 中央知识不可访问时必须报告 `knowledge source unavailable`，不得假装已读取。
+
 ## 核心输出
 
 ```text

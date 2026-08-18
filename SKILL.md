@@ -1,3 +1,8 @@
+---
+name: color-palette-skill
+description: Local-first、Zero-token 的中文照片色彩分析与 4:3 PNG/JSON 报告 Skill。用于分析影调、明暗、色彩浓度、白平衡与色相、肤色、素材特效、光线，以及涉及调色、LUT、Camera/Film Emulation 的任务；相关知识优先读取中央摄影知识树。
+---
+
 # 调色盘 / 色彩卡片 SKILL V0.14.0（中文官方框架版）
 
 ## 定位
@@ -28,6 +33,21 @@ Local-first / Zero-token 的专业照片色彩分析工具。
 
 正式视觉报告只输出 PNG，不再同步生成 JPG/JPEG。
 禁止只输出文字后结束。
+
+## Photography Knowledge Consumer
+
+本 Skill 是中央摄影知识树的 Consumer。凡任务涉及色彩分析、调色、LUT、Tone、Hue、Saturation、Skin Tone、Camera Emulation、Film Emulation、Grain、Halation、Bloom 或 Glow：
+
+1. 先读取中央 `KNOWLEDGE_REGISTRY.md`；
+2. 再按任务读取 Color Science 或 Color Grading Memory；
+3. 同时遵守中央 Evidence Level、Knowledge Status 与 Lifecycle；
+4. 按 [Photography Knowledge Consumer Contract](docs/PHOTOGRAPHY_KNOWLEDGE_CONTRACT.md) 解析路径和处理不可访问状态。
+
+中央知识树负责知识定义、Evidence、Knowledge Status、Rule ID 与科学边界；本 Skill 继续负责图片输入、确定性分析、字段组织、中文模板、七模块布局与 PNG/JSON 输出。禁止复制中央 Memory 或把本文件升级为最高知识源。
+
+内部推理、debug、research、实验与 QA 可记录 `Observation`、`Applied Rules`、`Knowledge Status` 和 `Evidence`。普通用户的正式报告默认不批量展示 Rule ID、Evidence 或置信度。不得把 `CREATIVE_HEURISTIC` 写成科学证明，不得把 `PROVISIONAL` 写成确定事实，不得把 `PROJECT_STANDARD` 写成普遍唯一工作流；仅 `VALIDATED` 可声明已完成项目实证验证。
+
+中央知识不可访问时，必须明确报告 `knowledge source unavailable`，不得假装已经读取或应用中央规则。不依赖中央知识的既有本地分析可以继续，但必须保留该降级状态。
 
 # 官方固定七模块
 所有照片必须按照下列顺序输出；不得因照片类型而删除、重命名或改变顺序：
@@ -131,6 +151,8 @@ Local-first / Zero-token 的专业照片色彩分析工具。
 
 ## 7. 素材特效&光线构成
 模块内固定两部分：
+
+LUT 与空间素材特效必须分离；内部 QA 追踪中央 `LUT-101`、`FX-101` 与 `FX-102`，正式用户报告不展示这些 Rule ID。
 
 ### 素材特效
 正式报告只显示 0..N 个简洁中文标签，每个标签独占一行。支持：
