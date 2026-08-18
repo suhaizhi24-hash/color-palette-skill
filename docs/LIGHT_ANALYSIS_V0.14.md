@@ -32,9 +32,10 @@ Quality 与 Ratio 均为 `not_applicable`。这避免把没有“被照亮主体
 
 ## JSON 与报告边界
 
-`analysis.json` 保留结构化枚举、主体 ROI 和内部特征；旧版 `light` 中文对象继续输出作为兼容
-适配层。报告渲染优先读取 V0.14 `lighting`，旧 JSON 缺少该字段时回退到 `light`。内部
-debug、confidence、evidence、ROI、色温与 EV 均不得进入正式 PNG。
+`analysis.json` 保留结构化枚举、主体 ROI、分类置信度、证据、备选解释、分析区域和内部特征；
+旧版 `light` 中文对象继续输出作为兼容适配层。报告渲染优先读取 V0.14 `lighting`，旧 JSON
+缺少该字段时回退到 `light`。内部 debug、confidence、evidence、alternatives、regions、ROI、
+色温与 EV 均不得进入正式 PNG。
 
 ## QA
 
@@ -46,7 +47,14 @@ python scripts/run_lighting_benchmark.py --input-dir /path/to/light_qa
 ```
 
 图片文件名仅用于 runner 将本地 `A`–`F` 资产与登记项配对，分析器从不读取文件名作为分类
-证据。未提供真实图片时 runner 明确返回 `pending_external_asset`，不得声称 6/6 通过。
+证据。每张图片都从像素重新分析并校验输入 SHA-256 未发生变化；结果只记录 SHA-256、固定
+Ground Truth、程序 Actual 与 PASS/FAIL。FAIL 项额外输出 Source/Quality/Ratio classifier、
+ROI 类型、confidence、evidence、alternatives 与 regions，且不保存文件名、路径或图片内容。
+如使用 `--output`，真实图片结果必须写到仓库之外。未提供真实图片时 runner 明确返回
+`pending_external_asset`，不得声称 6/6 通过。
+
+只有 A–F 全部 `PASS` 才将整个 Benchmark 判定为 `PASS`；任何不一致都必须保留为 `FAIL`，
+不得按程序结果修改人工 Ground Truth，也不得加入按文件名或 SHA-256 的分类特判。
 
 Light Analysis 是根据最终成片可观察到的受光特征进行视觉推断，不保证还原真实摄影现场的
 具体灯具型号、数量或精确灯位。

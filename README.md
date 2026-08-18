@@ -127,6 +127,9 @@ Light Analysis 根据最终成片可观察到的受光特征进行视觉推断�
 python scripts/run_lighting_benchmark.py --input-dir /path/to/light_qa
 ```
 
+Runner 从图片像素重新分析；只记录 SHA-256、固定 Ground Truth、程序 Actual 与
+PASS/FAIL。FAIL 项附带分类置信度、证据、备选解释和分析区域，结果文件必须保存在仓库外。
+
 ## Golden Dataset
 
 ```bash

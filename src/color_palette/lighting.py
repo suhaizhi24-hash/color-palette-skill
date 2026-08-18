@@ -84,15 +84,27 @@ def classify_source(features: SourceFeatures) -> str:
     photographs may contain white-balance, LUT, HSL, or curve changes.
     """
 
+    scores = _source_scores(features)
+    if scores["self_luminous"] >= 0.68 and features.scene_highlight_share <= 0.22:
+        return "self_luminous"
+    if scores["mixed"] >= 0.66 and features.chromatic_spread >= 0.20:
+        return "mixed"
+    if scores["flash"] >= 0.70:
+        return "flash"
+    if scores["studio"] >= 0.65 and features.subject_valid_share >= 0.08:
+        return "studio"
+    if scores["natural"] >= 0.50:
+        return "natural"
+    return "unknown"
+
+
+def _source_scores(features: SourceFeatures) -> dict[str, float]:
     self_luminous_score = (
         0.48 * _ramp(features.scene_dark_share, 0.58, 0.88)
         + 0.24 * _band(features.bright_component_share, 0.0005, 0.18)
         + 0.16 * _ramp(float(features.bright_component_count), 0.0, 3.0)
         + 0.12 * _ramp(features.subject_background_ev, 0.8, 2.5)
     )
-    if self_luminous_score >= 0.68 and features.scene_highlight_share <= 0.22:
-        return "self_luminous"
-
     flash_score = (
         0.35 * _ramp(features.scene_dark_share, 0.30, 0.72)
         + 0.30 * _ramp(features.subject_background_ev, 0.65, 2.1)
@@ -104,28 +116,24 @@ def classify_source(features: SourceFeatures) -> str:
         + 0.25 * _ramp(features.chromatic_spread, 0.16, 0.52)
         + 0.13 * _ramp(features.environment_texture, 0.08, 0.32)
     )
-    if mixed_score >= 0.66 and features.chromatic_spread >= 0.20:
-        return "mixed"
-    if flash_score >= 0.70:
-        return "flash"
-
     studio_score = (
         0.48 * _ramp(features.background_uniformity, 0.55, 0.91)
         + 0.30 * _ramp(features.subject_separation, 0.07, 0.35)
         + 0.22 * (1.0 - _ramp(features.environment_texture, 0.10, 0.32))
     )
-    if studio_score >= 0.65 and features.subject_valid_share >= 0.08:
-        return "studio"
-
     natural_score = (
         0.42 * _ramp(features.environment_texture, 0.06, 0.30)
         + 0.30 * (1.0 - _ramp(features.background_uniformity, 0.62, 0.92))
         + 0.18 * (1.0 - _ramp(features.scene_dark_share, 0.55, 0.84))
         + 0.10 * _ramp(features.subject_valid_share, 0.10, 0.35)
     )
-    if natural_score >= 0.50:
-        return "natural"
-    return "unknown"
+    return {
+        "self_luminous": self_luminous_score,
+        "flash": flash_score,
+        "mixed": mixed_score,
+        "studio": studio_score,
+        "natural": natural_score,
+    }
 
 
 def classify_quality(features: QualityFeatures) -> str:
@@ -211,23 +219,208 @@ def analyze_lighting(
         quality = classify_quality(quality_features)
         ratio = classify_ratio(ratio_features)
 
+    roi = {
+        "type": subject.kind,
+        "box": list(subject.box),
+        "valid_share": round(
+            float((subject.mask & valid_mask).sum() / max(valid_mask.sum(), 1)), 6
+        ),
+    }
+    classifier_diagnostics = _classifier_diagnostics(
+        source,
+        quality,
+        ratio,
+        source_features,
+        quality_features,
+        ratio_features,
+        roi,
+        rgb.shape[1],
+        rgb.shape[0],
+    )
+
     return {
         "ruleset_version": LIGHTING_RULESET_VERSION,
         "source": {"code": source, "display_name": SOURCE_DISPLAY[source]},
         "quality": {"code": quality, "display_name": QUALITY_DISPLAY[quality]},
         "ratio": {"code": ratio, "display_name": RATIO_DISPLAY[ratio]},
-        "subject_roi": {
-            "type": subject.kind,
-            "box": list(subject.box),
-            "valid_share": round(float((subject.mask & valid_mask).sum() / max(valid_mask.sum(), 1)), 6),
-        },
+        "subject_roi": roi,
         "debug": {
             "source_features": _rounded(asdict(source_features)),
             "quality_features": _rounded(asdict(quality_features)),
             "ratio_features": _rounded(asdict(ratio_features)),
+            "classifiers": classifier_diagnostics,
             "color_temperature_role": "auxiliary_only_not_decisive",
         },
     }
+
+
+def _classifier_diagnostics(
+    source: str,
+    quality: str,
+    ratio: str,
+    source_features: SourceFeatures,
+    quality_features: QualityFeatures,
+    ratio_features: RatioFeatures,
+    roi: dict,
+    image_width: int,
+    image_height: int,
+) -> dict[str, dict]:
+    source_scores = _source_scores(source_features)
+    quality_scores = _quality_scores(quality_features)
+    ratio_scores = _ratio_scores(ratio_features)
+    subject_region = {"type": roi["type"], "box": roi["box"]}
+    scene_region = {"type": "scene", "box": [0, 0, image_width, image_height]}
+    return {
+        "source": _diagnostic_result(
+            source,
+            SOURCE_DISPLAY,
+            source_scores,
+            _evidence(
+                source_features,
+                [
+                    "scene_dark_share",
+                    "scene_highlight_share",
+                    "background_uniformity",
+                    "subject_background_ev",
+                    "subject_separation",
+                    "chromatic_spread",
+                    "environment_texture",
+                    "bright_component_count",
+                    "bright_component_share",
+                ],
+            ),
+            [scene_region, subject_region],
+        ),
+        "quality": _diagnostic_result(
+            quality,
+            QUALITY_DISPLAY,
+            quality_scores,
+            _evidence(
+                quality_features,
+                [
+                    "subject_dynamic_range",
+                    "fine_edge_strength",
+                    "coarse_edge_strength",
+                    "edge_sharpness",
+                    "localized_highlight",
+                    "valid_share",
+                ],
+            ),
+            [subject_region],
+        ),
+        "ratio": _diagnostic_result(
+            ratio,
+            RATIO_DISPLAY,
+            ratio_scores,
+            _evidence(
+                ratio_features,
+                [
+                    "light_level",
+                    "shadow_level",
+                    "delta_ev",
+                    "subject_dynamic_range",
+                    "spatial_coherence",
+                    "lit_area_share",
+                    "shadow_area_share",
+                    "valid_share",
+                ],
+            ),
+            [subject_region],
+        ),
+    }
+
+
+def _quality_scores(features: QualityFeatures) -> dict[str, float]:
+    if features.valid_share < 0.05 or features.subject_dynamic_range < 0.025:
+        return {"hard": 0.0, "soft": 0.0, "unknown": 1.0}
+    hard = (
+        0.24 * _ramp(features.subject_dynamic_range, 0.12, 0.30)
+        + 0.22 * _ramp(features.fine_edge_strength, 0.012, 0.05)
+        + 0.18 * _ramp(features.coarse_edge_strength, 0.004, 0.02)
+        + 0.24 * _ramp(features.edge_sharpness, 1.35, 2.4)
+        + 0.12 * _ramp(features.localized_highlight, 0.015, 0.08)
+    )
+    soft = (
+        0.40 * (1.0 - _ramp(features.edge_sharpness, 1.25, 1.85))
+        + 0.25 * (1.0 - _ramp(features.fine_edge_strength, 0.02, 0.06))
+        + 0.20 * _ramp(features.coarse_edge_strength, 0.0005, 0.012)
+        + 0.15 * _ramp(features.subject_dynamic_range, 0.04, 0.18)
+    )
+    return {
+        "hard": hard,
+        "soft": soft,
+        "unknown": max(0.0, 1.0 - max(hard, soft)),
+    }
+
+
+def _ratio_scores(features: RatioFeatures) -> dict[str, float]:
+    if features.valid_share < 0.05:
+        return {"low": 0.0, "medium": 0.0, "high": 0.0, "unknown": 1.0}
+    balanced = _ramp(min(features.lit_area_share, features.shadow_area_share), 0.08, 0.18)
+    structure = 0.55 * _ramp(features.spatial_coherence, 0.05, 0.25) + 0.45 * balanced
+    high = (
+        0.45 * _ramp(features.delta_ev, 0.9, 1.8)
+        + 0.35 * _ramp(features.subject_dynamic_range, 0.16, 0.34)
+        + 0.20 * structure
+    )
+    medium = (
+        0.45 * _band(features.delta_ev, 0.42, 1.55)
+        + 0.35 * _band(features.subject_dynamic_range, 0.06, 0.26)
+        + 0.20 * structure
+    )
+    low = (
+        0.55 * (1.0 - _ramp(features.delta_ev, 0.35, 0.85))
+        + 0.35 * (1.0 - _ramp(features.subject_dynamic_range, 0.035, 0.14))
+        + 0.10 * (1.0 - structure)
+    )
+    return {"low": low, "medium": medium, "high": high, "unknown": 0.0}
+
+
+def _diagnostic_result(
+    code: str,
+    display: dict[str, str],
+    scores: dict[str, float],
+    evidence: list[dict],
+    regions: list[dict],
+) -> dict:
+    if code == "not_applicable":
+        confidence = 1.0
+        alternatives: list[dict] = []
+        evidence = [{"metric": "self_luminous_branch", "value": True}]
+    else:
+        chosen_score = scores.get(code, 1.0 - max(scores.values(), default=0.0))
+        confidence = min(0.99, max(0.01, chosen_score))
+        alternatives = [
+            {
+                "code": alternative,
+                "display_name": display[alternative],
+                "confidence": round(float(score), 6),
+            }
+            for alternative, score in sorted(
+                ((item, value) for item, value in scores.items() if item != code),
+                key=lambda item: (-item[1], item[0]),
+            )[:2]
+        ]
+    return {
+        "code": code,
+        "display_name": display[code],
+        "confidence": round(float(confidence), 6),
+        "evidence": evidence,
+        "alternatives": alternatives,
+        "regions": regions,
+    }
+
+
+def _evidence(features, names: list[str]) -> list[dict]:
+    return [
+        {
+            "metric": name,
+            "value": round(float(getattr(features, name)), 6)
+            if isinstance(getattr(features, name), float)
+            else getattr(features, name),
+        }
+        for name in names
+    ]
 
 
 def legacy_light(lighting: dict) -> dict[str, str]:

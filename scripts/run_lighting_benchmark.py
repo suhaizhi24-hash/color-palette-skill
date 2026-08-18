@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import sys
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 
 from color_palette.analyzer import analyze
 from color_palette.argparse_zh import ChineseArgumentParser
@@ -71,21 +78,38 @@ def run(manifest: dict, input_dir: Path) -> dict:
                 }
             )
             continue
+        sha256_before = _sha256(asset)
         analysis, _, _ = analyze(asset, face_backend="opencv")
+        sha256_after = _sha256(asset)
+        if sha256_after != sha256_before:
+            raise RuntimeError(f"Anchor {anchor['id']} 的输入图片在分析过程中发生变化")
+        if analysis.get("source", {}).get("sha256") != sha256_before:
+            raise RuntimeError(f"Anchor {anchor['id']} 的分析来源哈希与本地输入不一致")
         lighting = analysis["lighting"]
         actual = {
             "source": lighting["source"]["code"],
             "quality": lighting["quality"]["code"],
             "ratio": lighting["ratio"]["code"],
         }
-        results.append(
-            {
-                "id": anchor["id"],
-                "expected": anchor["expected"],
-                "actual": actual,
-                "status": "PASS" if actual == anchor["expected"] else "FAIL",
+        status = "PASS" if actual == anchor["expected"] else "FAIL"
+        item = {
+            "id": anchor["id"],
+            "sha256": sha256_before,
+            "expected": anchor["expected"],
+            "actual": actual,
+            "status": status,
+        }
+        if status == "FAIL":
+            classifiers = lighting.get("debug", {}).get("classifiers")
+            if not isinstance(classifiers, dict):
+                raise RuntimeError(f"Anchor {anchor['id']} 缺少分类器诊断信息")
+            item["diagnostics"] = {
+                "roi_type": lighting["subject_roi"]["type"],
+                "source_classifier": classifiers["source"],
+                "quality_classifier": classifiers["quality"],
+                "ratio_classifier": classifiers["ratio"],
             }
-        )
+        results.append(item)
     passed = sum(item["status"] == "PASS" for item in results)
     failed = sum(item["status"] == "FAIL" for item in results)
     pending = sum(item["status"] == "pending_external_asset" for item in results)
@@ -96,6 +120,23 @@ def run(manifest: dict, input_dir: Path) -> dict:
         "pending": pending,
         "results": results,
     }
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _validate_private_output(path: Path) -> None:
+    resolved = path.expanduser().resolve()
+    try:
+        resolved.relative_to(ROOT)
+    except ValueError:
+        return
+    raise ValueError("真实图片Benchmark结果必须保存在公开仓库之外")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -109,7 +150,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--input-dir", help="包含A-F真实图片的本地目录")
     parser.add_argument("--manifest-only", action="store_true", help="只校验登记文件，不读取图片")
-    parser.add_argument("--output", help="可选：保存不含图片路径和哈希的结果JSON")
+    parser.add_argument(
+        "--output",
+        help="可选：保存不含照片与路径的结果JSON；真实图片结果必须位于仓库外",
+    )
     args = parser.parse_args(argv)
 
     manifest = load_manifest(Path(args.manifest).expanduser().resolve())
@@ -127,7 +171,10 @@ def main(argv: list[str] | None = None) -> int:
     text = json.dumps(result, ensure_ascii=False, indent=2)
     print(text)
     if args.output:
-        Path(args.output).write_text(text + "\n", encoding="utf-8")
+        output = Path(args.output)
+        if not args.manifest_only:
+            _validate_private_output(output)
+        output.write_text(text + "\n", encoding="utf-8")
     return exit_code
 
 

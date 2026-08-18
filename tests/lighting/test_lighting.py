@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import cv2
 import numpy as np
@@ -18,6 +21,7 @@ from color_palette.lighting import (
     classify_source,
     select_subject_region,
 )
+import scripts.run_lighting_benchmark as benchmark_runner
 from scripts.run_lighting_benchmark import load_manifest, run
 
 
@@ -193,6 +197,22 @@ def test_renderer_copy_prefers_v014_and_hides_internal_debug():
     assert "delta_ev" not in str(report)
 
 
+def test_classifier_diagnostics_are_machine_facing_and_complete():
+    image = np.full((320, 320, 3), 128, dtype=np.uint8)
+    image[:, 160:] = 30
+    result = analyze_lighting(image, np.ones((320, 320), dtype=bool))
+    classifiers = result["debug"]["classifiers"]
+    assert set(classifiers) == {"source", "quality", "ratio"}
+    for diagnostic in classifiers.values():
+        assert 0.0 <= diagnostic["confidence"] <= 1.0
+        assert diagnostic["evidence"]
+        assert isinstance(diagnostic["alternatives"], list)
+        assert diagnostic["regions"]
+    analysis = _minimal_report_input()
+    analysis["lighting"] = result
+    assert "confidence" not in str(official_report(analysis))
+
+
 def test_legacy_json_renderer_fallback_is_preserved():
     analysis = _minimal_report_input()
     analysis["light"] = {"source": "人工闪光", "quality": "硬光", "ratio": "中"}
@@ -232,6 +252,82 @@ def test_benchmark_runner_reports_pending_without_faking_assets(tmp_path):
     assert result["passed"] == result["failed"] == 0
     assert result["pending"] == 6
     assert all(item["actual"] is None for item in result["results"])
+
+
+def test_benchmark_reanalyzes_pixels_and_emits_fail_diagnostics(monkeypatch, tmp_path):
+    asset = tmp_path / "A.png"
+    asset.write_bytes(b"private-pixel-fixture")
+    digest = hashlib.sha256(asset.read_bytes()).hexdigest()
+    calls = []
+
+    def fake_analyze(path, *, face_backend):
+        calls.append((path, face_backend))
+        return (
+            {
+                "source": {"sha256": digest},
+                "lighting": {
+                    "source": {"code": "studio"},
+                    "quality": {"code": "soft"},
+                    "ratio": {"code": "medium"},
+                    "subject_roi": {"type": "upper_body"},
+                    "debug": {
+                        "classifiers": {
+                            dimension: {
+                                "code": code,
+                                "confidence": 0.61,
+                                "evidence": [{"metric": "fixture", "value": 1.0}],
+                                "alternatives": [{"code": "unknown", "confidence": 0.2}],
+                                "regions": [{"type": "upper_body", "box": [1, 2, 3, 4]}],
+                            }
+                            for dimension, code in {
+                                "source": "studio",
+                                "quality": "soft",
+                                "ratio": "medium",
+                            }.items()
+                        }
+                    },
+                },
+            },
+            None,
+            None,
+        )
+
+    monkeypatch.setattr(benchmark_runner, "analyze", fake_analyze)
+    manifest = load_manifest(ROOT / "tests" / "lighting" / "lighting_benchmark.json")
+    result = run(manifest, tmp_path)
+    anchor = result["results"][0]
+    assert calls == [(asset, "opencv")]
+    assert anchor["sha256"] == digest
+    assert anchor["expected"] == {"source": "natural", "quality": "hard", "ratio": "high"}
+    assert anchor["actual"] == {"source": "studio", "quality": "soft", "ratio": "medium"}
+    assert anchor["status"] == "FAIL"
+    assert anchor["diagnostics"]["roi_type"] == "upper_body"
+    for name in ["source_classifier", "quality_classifier", "ratio_classifier"]:
+        diagnostic = anchor["diagnostics"][name]
+        assert set(["confidence", "evidence", "alternatives", "regions"]) <= set(diagnostic)
+    assert str(asset) not in json.dumps(result, ensure_ascii=False)
+    assert "private-pixel-fixture" not in json.dumps(result, ensure_ascii=False)
+
+
+def test_real_benchmark_output_must_stay_outside_repository(tmp_path):
+    with pytest.raises(ValueError, match="公开仓库之外"):
+        benchmark_runner._validate_private_output(ROOT / "private_benchmark_result.json")
+    benchmark_runner._validate_private_output(tmp_path / "private_benchmark_result.json")
+
+
+def test_benchmark_script_runs_from_clean_source_checkout():
+    completed = subprocess.run(
+        [sys.executable, "scripts/run_lighting_benchmark.py", "--manifest-only"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(completed.stdout) == {
+        "status": "PASS",
+        "registered": 6,
+        "real_assets_executed": 0,
+    }
 
 
 def test_analysis_schema_exposes_v014_lighting_enums():

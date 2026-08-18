@@ -33,6 +33,7 @@ doctor*.json
 privacy_scan*.json
 light_effect_validation*.json
 lighting_benchmark_registry*.json
+lighting_benchmark_result*.json
 clean_wheel_smoke*.json
 wheel_smoke_output/
 
