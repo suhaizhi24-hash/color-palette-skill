@@ -94,13 +94,14 @@ PUBLIC_JSON_ALLOWLIST = frozenset(
         "config/output_policy.json",
         "examples/golden_ground_truth.example.json",
         "examples/light_effect_ground_truth.example.json",
-        "examples/output_v013/synthetic_portrait_analysis.json",
+        "examples/output_v014/synthetic_portrait_analysis.json",
         "examples/public_examples_manifest.json",
         "examples/public_examples_provenance.json",
         "release_manifest.json",
         "schemas/analysis.schema.json",
         "schemas/ground_truth.schema.json",
         "schemas/light_effect_ground_truth.schema.json",
+        "tests/lighting/lighting_benchmark.json",
     }
 )
 PUBLIC_GROUND_TRUTH_JSONS = frozenset(
@@ -110,10 +111,11 @@ PUBLIC_GROUND_TRUTH_JSONS = frozenset(
     }
 )
 PUBLIC_ANALYSIS_JSONS = frozenset(
-    {"examples/output_v013/synthetic_portrait_analysis.json"}
+    {"examples/output_v014/synthetic_portrait_analysis.json"}
 )
+LIGHTING_BENCHMARK_JSON = "tests/lighting/lighting_benchmark.json"
 PUBLIC_IMAGE_LICENSE = "CC0-1.0"
-PUBLIC_RELEASE_VERSION = "0.13.0"
+PUBLIC_RELEASE_VERSION = "0.14.0"
 PUBLIC_MANIFEST_ORIGIN = "程序生成，无真人、无私人素材、无外部版权依赖"
 
 SECRET_PATTERNS = {
@@ -581,6 +583,44 @@ def _validate_analysis(
         errors.append(f"公开analysis未唯一引用清单中的合成图片：{relative}")
 
 
+def _validate_lighting_benchmark(root: Path, relative: str, errors: list[str]) -> None:
+    """Allow only a path-free registry for private external A-F assets."""
+
+    document = _load_json(root / relative, "Lighting Benchmark登记", errors)
+    if not isinstance(document, dict):
+        return
+    if document.get("schema_version") != PUBLIC_RELEASE_VERSION:
+        errors.append(f"Lighting Benchmark版本必须为{PUBLIC_RELEASE_VERSION}")
+    dataset = document.get("dataset")
+    if not isinstance(dataset, dict) or dataset.get("privacy") != "外部本地测试，不进入公开仓库":
+        errors.append("Lighting Benchmark必须声明外部本地测试隐私边界")
+    anchors = document.get("anchors")
+    if (
+        not isinstance(anchors, list)
+        or not all(isinstance(item, dict) for item in anchors)
+        or [item.get("id") for item in anchors] != list("ABCDEF")
+    ):
+        errors.append("Lighting Benchmark必须按A-F登记六个Anchor")
+        return
+    allowed_fields = {"id", "description", "match_stem", "expected", "status"}
+    enum_values = {
+        "source": {"natural", "studio", "flash", "mixed", "self_luminous", "unknown"},
+        "quality": {"hard", "soft", "not_applicable", "unknown"},
+        "ratio": {"low", "medium", "high", "not_applicable", "unknown"},
+    }
+    for anchor in anchors:
+        anchor_id = anchor["id"]
+        if set(anchor) - allowed_fields:
+            errors.append(f"Lighting Anchor {anchor_id} 包含路径、哈希或未授权字段")
+        if anchor.get("match_stem") != anchor_id or anchor.get("status") != "pending_external_asset":
+            errors.append(f"Lighting Anchor {anchor_id} 必须保持外部待验收状态")
+        expected = anchor.get("expected")
+        if not isinstance(expected, dict) or any(
+            expected.get(key) not in allowed for key, allowed in enum_values.items()
+        ):
+            errors.append(f"Lighting Anchor {anchor_id} 的预期枚举无效")
+
+
 def scan(root: Path) -> dict:
     root = root.resolve()
     errors: list[str] = []
@@ -670,6 +710,8 @@ def scan(root: Path) -> dict:
         _validate_ground_truth(root, relative, allowed, errors)
     for relative in sorted(PUBLIC_ANALYSIS_JSONS & candidate_relatives):
         _validate_analysis(root, relative, allowed, errors)
+    if LIGHTING_BENCHMARK_JSON in candidate_relatives:
+        _validate_lighting_benchmark(root, LIGHTING_BENCHMARK_JSON, errors)
 
     return {
         "status": "通过" if not errors else "失败",

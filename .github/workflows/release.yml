@@ -63,7 +63,7 @@ jobs:
         run: python -m pip install -e ".[dev]"
 
       - name: 编译检查
-        run: python -m compileall -q src tests tools
+        run: python -m compileall -q src tests tools scripts
 
       - name: 校验 OpenCV 4.x 契约
         run: >-
@@ -71,7 +71,12 @@ jobs:
           major,minor=map(int,cv2.__version__.split('.')[:2]);
           print('OpenCV', cv2.__version__);
           assert major == 4 and minor >= 14,
-          f'V0.13.0要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
+          f'V0.14.0要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
+
+      - name: 校验 Lighting A-F Benchmark 登记
+        run: >-
+          python scripts/run_lighting_benchmark.py --manifest-only
+          --output lighting_benchmark_registry_release.json
 
       - name: 运行完整测试
         run: python -m pytest -q
@@ -121,7 +126,7 @@ jobs:
       - name: 审计 Wheel
         run: >-
           python tools/audit_wheel.py dist
-          --expected-version 0.13.0
+          --expected-version 0.14.0
           --output wheel_audit_release.json
 
       - name: 全新虚拟环境安装与 CLI PNG + JSON 烟雾测试
@@ -156,7 +161,7 @@ jobs:
       - name: 上传已验证的发布候选 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: color-palette-skill-v0.13.0-${{ github.sha }}
+          name: color-palette-skill-v0.14.0-${{ github.sha }}
           path: |
             dist/*.whl
             dist/SHA256SUMS.txt
@@ -165,6 +170,7 @@ jobs:
             schema_validation_release.json
             golden_validation_report.json
             light_effect_validation_release.json
+            lighting_benchmark_registry_release.json
             doctor_release.json
             wheel_audit_release.json
             clean_wheel_smoke_release.json

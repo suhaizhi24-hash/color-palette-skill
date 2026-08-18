@@ -56,7 +56,7 @@ def test_release_workflow_runs_complete_gates_in_safe_order():
     assert "generate_public_fixtures.py" not in text
 
     required_markers = (
-        "python -m compileall -q src tests tools",
+        "python -m compileall -q src tests tools scripts",
         "major == 4",
         "python -m pytest -q",
         "python tools/validate_schemas.py",
@@ -67,7 +67,8 @@ def test_release_workflow_runs_complete_gates_in_safe_order():
         "validate_light_effect_dataset.py",
         "color-palette --help",
         "color-palette-doctor",
-        "--expected-version 0.13.0",
+        "--expected-version 0.14.0",
+        "run_lighting_benchmark.py --manifest-only",
         "SOURCE_DATE_EPOCH",
         "{'.jpg', '.jpeg'}",
     )
@@ -90,6 +91,7 @@ def test_release_artifact_contains_wheel_hash_commit_and_gate_evidence():
         "schema_validation_release.json",
         "golden_validation_report.json",
         "light_effect_validation_release.json",
+        "lighting_benchmark_registry_release.json",
         "doctor_release.json",
         "wheel_audit_release.json",
         "clean_wheel_smoke_release.json",

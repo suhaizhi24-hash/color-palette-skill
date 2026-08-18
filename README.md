@@ -33,7 +33,7 @@ python -m pip install -e .
 Wheel 安装：
 
 ```bash
-python -m pip install color_palette_skill-0.13.0-py3-none-any.whl
+python -m pip install color_palette_skill-0.14.0-py3-none-any.whl
 ```
 
 ## 使用
@@ -48,7 +48,7 @@ color-palette photo.jpg --output ./result
 color-palette photo.jpg --output ./result --face-backend opencv
 ```
 
-V0.13.0 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
+V0.14.0 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
 OpenCV 4.x 运行完整测试。OpenCV 5.x 尚未纳入兼容性承诺，待完成独立兼容测试后再放开上限。
 
 其他选项：
@@ -106,6 +106,27 @@ color-palette-doctor
 Material FX 是基于最终图像视觉特征的推断，不保证还原作者真实使用的软件、滤镜或制作步骤。
 完整分类、Schema 与排除规则见 [Material FX V0.13 规则](docs/MATERIAL_FX_V0.13.md)。
 
+## Light Analysis V0.14
+
+光线构成把三个维度独立分析：
+
+- 光源：自然光、人工棚拍、人工闪光、混合光、自发光；
+- 光质：硬光、柔光；
+- 光比：低、中、高。
+
+光质以主体 ROI 中的阴影边缘与半影宽度为核心；光比比较同一主体受光面与阴影面，
+不复用全图对比度。烟花、霓虹、LED、灯具与火焰等自发光主体显示“光质：不适用、
+光比：不适用”。综合色温只保留为内部辅助信息，不用于“偏暖即人工光、偏冷即自然光”
+的捷径判断。
+
+Light Analysis 根据最终成片可观察到的受光特征进行视觉推断，不保证还原真实摄影现场的
+具体灯具型号、数量或精确灯位。完整规则见
+[Light Analysis V0.14](docs/LIGHT_ANALYSIS_V0.14.md)。真实 A–F 图片只在仓库外本地验证：
+
+```bash
+python scripts/run_lighting_benchmark.py --input-dir /path/to/light_qa
+```
+
 ## Golden Dataset
 
 ```bash
@@ -136,7 +157,7 @@ python tools/privacy_scan.py .
 
 ## 当前阶段
 
-V0.13.0：Material FX 多标签识别升级开发版。
+V0.14.0：Light Analysis Intelligence 光线构成升级开发版。
 
 仓库配置了 Ubuntu、macOS、Windows 与 Python 3.10、3.12、3.13 的 GitHub Actions 矩阵。具体通过状态以当前 Pull Request 的 Actions 结果为准。
 

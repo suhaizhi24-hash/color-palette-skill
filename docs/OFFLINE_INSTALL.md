@@ -1,11 +1,11 @@
-# 离线 / 本地安装说明 V0.12
+# 离线 / 本地安装说明 V0.14
 
 ## Wheel 安装
 
 在已准备依赖的环境中：
 
 ```bash
-python -m pip install color_palette_skill-0.13.0-py3-none-any.whl --no-deps
+python -m pip install color_palette_skill-0.14.0-py3-none-any.whl --no-deps
 ```
 
 ## 源码安装
@@ -20,7 +20,7 @@ python -m pip install . --no-build-isolation --no-deps
 
 - Pillow
 - NumPy
-- OpenCV Headless `>=4.14,<5`（核心 CI 验证实际解析到的 4.x；V0.13.0 暂不支持 5.x）
+- OpenCV Headless `>=4.14,<5`（核心 CI 验证实际解析到的 4.x；V0.14.0 暂不支持 5.x）
 - scikit-image
 - scikit-learn
 

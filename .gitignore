@@ -26,10 +26,13 @@ ci_output/
 *_color_report.png
 !examples/output_v012/*_analysis.json
 !examples/output_v012/*_color_report.png
+!examples/output_v014/*_analysis.json
+!examples/output_v014/*_color_report.png
 
 doctor*.json
 privacy_scan*.json
 light_effect_validation*.json
+lighting_benchmark_registry*.json
 clean_wheel_smoke*.json
 wheel_smoke_output/
 

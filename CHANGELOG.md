@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.0
+
+- 新增独立 Light Source 分类：自然光、人工棚拍、人工闪光、混合光、自发光与可靠降级；
+- 新增以主体 ROI Shadow Edge / Penumbra 为核心的硬光、柔光分类；
+- 光比改为比较同一主体受光面与阴影面，不再复用全图明暗关系；
+- 新增 Face → Upper Body → Full Body → Main Subject ROI fallback；
+- 自发光场景固定输出“光质：不适用、光比：不适用”；
+- 新增 A–F 外部真实图片 Benchmark 登记与本地 runner，缺少图片时明确标记 `pending_external_asset`；
+- 分析 Schema 升级到 0.14.0，并保留旧 `light` JSON 的报告渲染兼容；
+- Material FX 继续使用 `material-fx-0.13.0`，正式 PNG/JSON、中文七模块、Zero-token 与原图保真契约不变。
+
 ## 0.13.0
 
 - Material FX 升级为 0..N 多标签结构，正式报告仅显示中文效果名称；

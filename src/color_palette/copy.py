@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .constants import OFFICIAL_MODULES
+from .lighting import visible_light
 from .material_fx import display_names
 
 
@@ -58,7 +59,7 @@ def official_report(analysis: dict) -> dict:
         skin_lines = ["未检测到可用于稳定肤色分析的单人脸，样本不足，不输出肤色数值。"]
 
     effect_labels = display_names(analysis)
-    light = analysis["light"]
+    light = visible_light(analysis)
     report = {
         "官方语言": "中文（zh-CN）",
         "官方模块": OFFICIAL_MODULES,
