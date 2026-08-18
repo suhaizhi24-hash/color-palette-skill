@@ -91,7 +91,11 @@ def classify_source(features: SourceFeatures) -> str:
         return "mixed"
     if scores["flash"] >= 0.70:
         return "flash"
-    if scores["studio"] >= 0.65 and features.subject_valid_share >= 0.08:
+    controlled_portrait = _controlled_portrait_score(features)
+    if (
+        scores["studio"] >= 0.65
+        or (controlled_portrait >= 0.75 and scores["studio"] >= 0.56)
+    ) and features.subject_valid_share >= 0.08:
         return "studio"
     if scores["natural"] >= 0.50:
         return "natural"
@@ -99,6 +103,14 @@ def classify_source(features: SourceFeatures) -> str:
 
 
 def _source_scores(features: SourceFeatures) -> dict[str, float]:
+    controlled_portrait = _controlled_portrait_score(features)
+    low_light_environment = min(
+        _ramp(features.scene_dark_share, 0.60, 0.75),
+        _band(features.scene_highlight_share, 0.01, 0.12),
+        _ramp(float(features.bright_component_count), 1.0, 5.0),
+        1.0 - _ramp(abs(features.subject_background_ev), 0.55, 1.00),
+        1.0 - _ramp(features.subject_separation, 0.06, 0.14),
+    )
     self_luminous_score = (
         0.48 * _ramp(features.scene_dark_share, 0.58, 0.88)
         + 0.24 * _band(features.bright_component_share, 0.0005, 0.18)
@@ -116,16 +128,20 @@ def _source_scores(features: SourceFeatures) -> dict[str, float]:
         + 0.25 * _ramp(features.chromatic_spread, 0.16, 0.52)
         + 0.13 * _ramp(features.environment_texture, 0.08, 0.32)
     )
-    studio_score = (
+    studio_score = min(
+        1.0,
         0.48 * _ramp(features.background_uniformity, 0.55, 0.91)
         + 0.30 * _ramp(features.subject_separation, 0.07, 0.35)
         + 0.22 * (1.0 - _ramp(features.environment_texture, 0.10, 0.32))
+        + 0.38 * controlled_portrait,
     )
-    natural_score = (
+    natural_score = min(
+        1.0,
         0.42 * _ramp(features.environment_texture, 0.06, 0.30)
         + 0.30 * (1.0 - _ramp(features.background_uniformity, 0.62, 0.92))
         + 0.18 * (1.0 - _ramp(features.scene_dark_share, 0.55, 0.84))
         + 0.10 * _ramp(features.subject_valid_share, 0.10, 0.35)
+        + 0.16 * low_light_environment,
     )
     return {
         "self_luminous": self_luminous_score,
@@ -134,6 +150,15 @@ def _source_scores(features: SourceFeatures) -> dict[str, float]:
         "studio": studio_score,
         "natural": natural_score,
     }
+
+
+def _controlled_portrait_score(features: SourceFeatures) -> float:
+    return min(
+        _ramp(features.subject_valid_share, 0.30, 0.45),
+        _ramp(abs(features.subject_background_ev), 0.90, 1.30),
+        _ramp(features.subject_separation, 0.10, 0.16),
+        1.0 - _ramp(features.environment_texture, 0.04, 0.08),
+    )
 
 
 def classify_quality(features: QualityFeatures) -> str:

@@ -39,6 +39,8 @@ wheel_smoke_output/
 
 # v0.14 光线分析本地合成 Preview（不得提交或视作真实照片 Benchmark）
 qa/light_v014_preview/
+qa/light_v014_preview_review/
+qa/light_v014_preview_review.zip
 
 .env
 .env.*

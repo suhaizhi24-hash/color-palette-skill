@@ -58,6 +58,24 @@ def test_coarse_grain_is_distinct_from_fine_grain():
     assert "粗颗粒" in _names(image)
 
 
+def test_coarse_grain_fallback_uses_smaller_flat_regions():
+    rng = np.random.default_rng(133)
+    image = np.zeros((600, 600, 3), dtype=np.float32)
+    image[:, :300] = 250
+    image[:, 300:] = 5
+    image[100:500, 200:400] = (178, 148, 132)
+    noise = cv2.GaussianBlur(
+        rng.normal(0, 12, image.shape[:2]).astype(np.float32),
+        (0, 0),
+        1.8,
+    )
+    subject = np.zeros(image.shape[:2], dtype=np.float32)
+    subject[100:500, 200:400] = 1
+    image += noise[..., None] * subject[..., None]
+    names = _names(np.clip(image, 0, 255).astype(np.uint8))
+    assert "粗颗粒" in names
+
+
 def test_rgb_channel_displacement_is_detected():
     base = _structured()
     shifted = base.copy()
@@ -68,6 +86,24 @@ def test_rgb_channel_displacement_is_detected():
 
 def test_whole_frame_gaussian_blur_is_detected():
     blurred = cv2.GaussianBlur(_structured(), (0, 0), 3.2)
+    assert "高斯模糊" in _names(blurred)
+
+
+def test_scale_normalized_blur_detects_consistent_full_frame_detail_loss():
+    rng = np.random.default_rng(134)
+    y, x = np.mgrid[:768, :768]
+    texture = (
+        128
+        + 45 * np.sin(x / 8)
+        + 35 * np.sin(y / 10.4)
+        + rng.normal(0, 18, (768, 768))
+    )
+    texture = np.repeat(
+        np.clip(texture, 0, 255).astype(np.uint8)[..., None],
+        3,
+        axis=2,
+    )
+    blurred = cv2.GaussianBlur(texture, (0, 0), 3.4)
     assert "高斯模糊" in _names(blurred)
 
 

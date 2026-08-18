@@ -38,6 +38,16 @@ def analyze_material_fx(rgb: np.ndarray, valid_mask: np.ndarray) -> dict:
         tiles,
         key=lambda tile: tile.gradient_median + tile.luma_std * 0.06,
     )[: min(8, len(tiles))]
+    coarse_grain_tiles = sorted(
+        (
+            tile
+            for tile in _tiles(gray, prepared_mask, grid=6)
+            if 18 <= tile.mean_luma <= 246
+            and tile.gradient_median <= 72
+            and tile.luma_std <= 58
+        ),
+        key=lambda tile: tile.gradient_median + tile.luma_std * 0.06,
+    )[:8]
     edge_tiles = sorted(
         tiles,
         key=lambda tile: tile.laplacian_variance,
@@ -47,6 +57,7 @@ def analyze_material_fx(rgb: np.ndarray, valid_mask: np.ndarray) -> dict:
     diagnostics = {
         "roi_strategy": {
             "flat": [tile.name for tile in flat_tiles],
+            "coarse_grain": [tile.name for tile in coarse_grain_tiles],
             "edge": [tile.name for tile in edge_tiles],
             "highlight": "Luma>=235及其邻域",
             "face": "肤色ROI由独立肤色模块提供；Material FX不以平滑肤色单独判定模糊",
@@ -56,6 +67,21 @@ def analyze_material_fx(rgb: np.ndarray, valid_mask: np.ndarray) -> dict:
     items: list[dict] = []
 
     grain = _detect_grain(prepared_rgb, gray, prepared_mask, flat_tiles)
+    if grain is None:
+        coarse_candidate = _detect_grain(
+            prepared_rgb,
+            gray,
+            prepared_mask,
+            coarse_grain_tiles,
+        )
+        if coarse_candidate and coarse_candidate.get("subtype") == "coarse":
+            coarse_candidate["evidence"].append(
+                "较小分块补充采样确认粗尺度随机残差跨区域存在"
+            )
+            coarse_candidate["regions"] = [
+                f"g6:{region}" for region in coarse_candidate["regions"]
+            ]
+            grain = coarse_candidate
     if grain:
         items.append(grain)
 
@@ -240,7 +266,11 @@ def _detect_grain(
         tile
         for tile in usable
         if tile.mean_luma >= 85
-        and ((tile.broad_residual >= 1.15) if coarse_candidate else (tile.fine_residual >= 2.15))
+        and (
+            (tile.broad_residual >= 1.15)
+            if coarse_candidate
+            else (tile.fine_residual >= 2.15)
+        )
     ]
     if chroma_ratio > 1.35 and len(bright_evidence) < 2:
         return None
@@ -254,6 +284,15 @@ def _detect_grain(
         + persistence * 0.22
         + min(len(bright_evidence), 3) * 0.025,
     )
+    supporting_tiles = [
+        tile.name
+        for tile in usable
+        if (
+            tile.broad_residual >= 1.15
+            if coarse_candidate
+            else tile.fine_residual >= 2.15
+        )
+    ]
     return _item(
         "grain",
         display_name,
@@ -264,7 +303,7 @@ def _detect_grain(
             f"细尺度/宽尺度残差比={scale_ratio:.3f}",
         ],
         ["暗部数字噪点", "JPEG块效应", "真实物体纹理"],
-        [tile.name for tile in usable if tile.fine_residual >= 2.15],
+        supporting_tiles,
         subtype=subtype,
     )
 
@@ -296,7 +335,48 @@ def _detect_blur(
     if int(edge_mask.sum()) < 96:
         return None
     laplacian = np.abs(cv2.Laplacian(gray, cv2.CV_32F, ksize=3))
-    acutance = float(np.median(laplacian[edge_mask]) / max(np.median(gradient[edge_mask]), 0.1))
+    acutance = float(
+        np.median(laplacian[edge_mask])
+        / max(np.median(gradient[edge_mask]), 0.1)
+    )
+
+    scale_ratios = np.array(
+        [
+            tile.fine_residual / max(tile.broad_residual, 0.1)
+            for tile in candidates
+        ],
+        dtype=float,
+    )
+    median_scale_ratio = float(np.median(scale_ratios))
+    retained_detail_p90 = float(np.percentile(scale_ratios, 90))
+    median_broad_residual = float(
+        np.median([tile.broad_residual for tile in candidates])
+    )
+    if (
+        len(candidates) >= 6
+        and median_broad_residual >= 1.50
+        and median_scale_ratio <= 0.30
+        and retained_detail_p90 <= 0.34
+        and acutance < 0.50
+    ):
+        return _item(
+            "gaussian_blur",
+            "高斯模糊",
+            min(
+                0.91,
+                0.72
+                + max(0.0, 0.30 - median_scale_ratio) * 1.2
+                + max(0.0, 0.34 - retained_detail_p90) * 0.8,
+            ),
+            [
+                "多个结构区域的细尺度细节相对宽尺度信息一致衰减",
+                f"宽尺度结构残差中位数={median_broad_residual:.3f}",
+                f"细/宽尺度残差中位比={median_scale_ratio:.3f}",
+                f"清晰细节保留P90={retained_detail_p90:.3f}",
+            ],
+            ["浅景深", "光学扩散", "低分辨率输入"],
+            [tile.name for tile in edge_tiles[:4]],
+        )
 
     # A naturally defocused background still retains at least one clearly sharp
     # subject tile. This exclusion prevents shallow DOF from becoming Blur.

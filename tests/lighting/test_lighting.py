@@ -89,6 +89,51 @@ def test_warm_and_cool_proxies_do_not_decide_source():
 
 
 @pytest.mark.parametrize(
+    "subject_background_ev",
+    [-2.4, 1.25],
+)
+def test_controlled_portrait_structure_can_identify_studio_on_light_or_dark_backdrops(
+    subject_background_ev,
+):
+    features = _source_features(
+        scene_dark_share=0.48,
+        background_uniformity=0.02,
+        subject_background_ev=subject_background_ev,
+        subject_separation=0.16,
+        environment_texture=0.045,
+        subject_valid_share=0.46,
+    )
+    assert classify_source(features) == "studio"
+
+
+def test_low_light_environment_with_modest_subject_separation_remains_natural():
+    features = _source_features(
+        scene_dark_share=0.74,
+        scene_highlight_share=0.03,
+        background_uniformity=0.34,
+        subject_background_ev=0.50,
+        subject_separation=0.03,
+        chromatic_spread=0.08,
+        environment_texture=0.006,
+        bright_component_count=4,
+        bright_component_share=0.027,
+        subject_valid_share=0.56,
+    )
+    assert classify_source(features) == "natural"
+
+
+def test_lower_studio_score_without_controlled_portrait_evidence_is_not_enough():
+    features = _source_features(
+        background_uniformity=0.50,
+        subject_background_ev=0.40,
+        subject_separation=0.18,
+        environment_texture=0.09,
+        subject_valid_share=0.42,
+    )
+    assert classify_source(features) != "studio"
+
+
+@pytest.mark.parametrize(
     ("overrides", "expected"),
     [
         (
