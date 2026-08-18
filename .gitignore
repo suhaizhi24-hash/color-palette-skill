@@ -37,6 +37,9 @@ lighting_benchmark_result*.json
 clean_wheel_smoke*.json
 wheel_smoke_output/
 
+# v0.14 光线分析本地合成 Preview（不得提交或视作真实照片 Benchmark）
+qa/light_v014_preview/
+
 .env
 .env.*
 !.env.example
