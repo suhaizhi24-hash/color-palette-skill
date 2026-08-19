@@ -1,7 +1,15 @@
-# 调色盘 / 色彩卡片 SKILL V0.13.0（中文官方框架版）
+---
+name: color-palette-skill
+description: Local-first、Zero-token 的中文照片色彩分析与 4:3 PNG/JSON 报告 Skill。用于分析影调、明暗、色彩浓度、白平衡与色相、肤色、素材特效、光线，以及涉及调色、LUT、Camera/Film Emulation 的任务；相关知识优先读取中央摄影知识树。
+---
+
+# 调色盘 / 色彩卡片 SKILL V0.14.0（中文官方框架版）
 
 ## 定位
 Local-first / Zero-token 的专业照片色彩分析工具。
+
+> 当前状态：**v0.14.0 Candidate，工程实现与 CI 已通过，A–F 真实照片 Benchmark 尚未完成。**
+> 在外部真实照片完成 6/6 验收前，不得将本候选版本标记为真实照片验证通过。
 
 ## 最高规则 0：官方语言必须为中文
 - 所有用户可见的模块标题、结论、判断标签、降级提示与报告说明，必须使用中文（zh-CN）作为官方语言。
@@ -25,6 +33,21 @@ Local-first / Zero-token 的专业照片色彩分析工具。
 
 正式视觉报告只输出 PNG，不再同步生成 JPG/JPEG。
 禁止只输出文字后结束。
+
+## Photography Knowledge Consumer
+
+本 Skill 是中央摄影知识树的 Consumer。凡任务涉及色彩分析、调色、LUT、Tone、Hue、Saturation、Skin Tone、Camera Emulation、Film Emulation、Grain、Halation、Bloom 或 Glow：
+
+1. 先读取中央 `KNOWLEDGE_REGISTRY.md`；
+2. 再按任务读取 Color Science 或 Color Grading Memory；
+3. 同时遵守中央 Evidence Level、Knowledge Status 与 Lifecycle；
+4. 按 [Photography Knowledge Consumer Contract](docs/PHOTOGRAPHY_KNOWLEDGE_CONTRACT.md) 解析路径和处理不可访问状态。
+
+中央知识树负责知识定义、Evidence、Knowledge Status、Rule ID 与科学边界；本 Skill 继续负责图片输入、确定性分析、字段组织、中文模板、七模块布局与 PNG/JSON 输出。禁止复制中央 Memory 或把本文件升级为最高知识源。
+
+内部推理、debug、research、实验与 QA 可记录 `Observation`、`Applied Rules`、`Knowledge Status` 和 `Evidence`。普通用户的正式报告默认不批量展示 Rule ID、Evidence 或置信度。不得把 `CREATIVE_HEURISTIC` 写成科学证明，不得把 `PROVISIONAL` 写成确定事实，不得把 `PROJECT_STANDARD` 写成普遍唯一工作流；仅 `VALIDATED` 可声明已完成项目实证验证。
+
+中央知识不可访问时，必须明确报告 `knowledge source unavailable`，不得假装已经读取或应用中央规则。不依赖中央知识的既有本地分析可以继续，但必须保留该降级状态。
 
 # 官方固定七模块
 所有照片必须按照下列顺序输出；不得因照片类型而删除、重命名或改变顺序：
@@ -129,6 +152,8 @@ Local-first / Zero-token 的专业照片色彩分析工具。
 ## 7. 素材特效&光线构成
 模块内固定两部分：
 
+LUT 与空间素材特效必须分离；内部 QA 追踪中央 `LUT-101`、`FX-101` 与 `FX-102`，正式用户报告不展示这些 Rule ID。
+
 ### 素材特效
 正式报告只显示 0..N 个简洁中文标签，每个标签独占一行。支持：
 
@@ -167,7 +192,31 @@ Material FX 只推断最终成片中的可见视觉现象，不保证还原作�
 - 光质
 - 光比
 
-P1-C 校准完成前，证据不足时必须中文降级，不允许强判。
+三个字段必须独立判断，不得使用 `studio => soft`、`hard => high` 或
+`natural => hard` 等硬绑定。正式中文枚举为：
+
+- 光源：自然光 / 人工棚拍 / 人工闪光 / 混合光 / 自发光 / 暂不判定；
+- 光质：硬光 / 柔光 / 不适用 / 暂不判定；
+- 光比：低 / 中 / 高 / 不适用 / 暂不判定。
+
+对常规受光主体，产品层覆盖范围为：
+
+- 光源：自然光 / 人工棚拍 / 人工光 / 混合光 / 暂不判定；当前确定性实现将可识别的
+  人工光细分显示为“人工闪光”，并为烟花、霓虹、LED、灯具、火焰保留“自发光”保护分支；
+- 光质：硬光 / 柔光；只有自发光等不适用场景或证据不足时才降级为“不适用 / 暂不判定”；
+- 光比：低 / 中 / 高；只有自发光等不适用场景或证据不足时才降级为“不适用 / 暂不判定”。
+
+光质以主体 ROI 内 Shadow Edge / Penumbra 为核心；光比只比较同一主体的受光面与
+阴影面，不得复用全图明暗关系或把白背景、黑衣服当成高光比。ROI 顺序为 Face →
+Upper Body → Full Body → Main Subject。综合色温只能作为低权重辅助信息。自发光主体
+固定使用“光质：不适用、光比：不适用”。只有大类证据确实不足时才允许“暂不判定”。
+
+主体 ROI 支持人物场景的 Face → Upper Body → Full Body fallback；脸部过小或多人场景
+不得直接停止分析，而应继续使用身体结构或 Main Subject ROI。多人肤色锚点仍严格保持
+“多人不合并”，光线分析不得把多人的肤色数值合并为单一锚点。
+
+内部可保留特征、ROI 与近似 ΔEV 供 QA 使用；正式 PNG 仍只显示光源、光质、光比，
+不得显示 confidence、evidence、ROI、色温或 EV。
 
 # 固定流程
 图片 → 原图校验 → sRGB工作空间 → 像素分析 → 确定性规则 → 中文本地文案模板 → 4:3报告 → PNG/JSON。
@@ -351,7 +400,7 @@ color-palette-golden ./images \
   --strict-missing
 ```
 
-# V0.13.0 当前工程契约（延续 V0.12.0 发布加固）
+# V0.14.0 当前工程契约（延续 V0.12.0 发布加固）
 
 ## 跨平台字体
 - macOS 首选 PingFang SC（苹方简）；
@@ -372,7 +421,7 @@ color-palette-golden ./images \
 
 ## 人脸后端
 - 跨平台默认使用 OpenCV；
-- V0.13.0 的依赖接受范围为 OpenCV `>=4.14,<5`；核心 CI 对各平台实际解析到的 OpenCV 4.x 运行完整测试，暂不承诺 OpenCV 5.x；
+- V0.14.0 的依赖接受范围为 OpenCV `>=4.14,<5`；核心 CI 对各平台实际解析到的 OpenCV 4.x 运行完整测试，暂不承诺 OpenCV 5.x；
 - dlib 为可选增强，不得成为核心依赖；
 - dlib 缺失或失败时安全降级至 OpenCV；
 - `none` 允许关闭肤色分析，但不得影响核心色彩分析；
@@ -396,7 +445,8 @@ color-palette-golden ./images \
 - 必须先扫描 checkout 原貌；如更新夹具，生成后再次扫描，之后才能打包与发布。
 
 ## 光线与素材特效
-- 光线构成继续保持原有保守降级策略，本轮不重构；
+- Light Analysis V0.14 使用独立 Source / Quality / Ratio 分类器、主体 ROI fallback 与自发光保护分支；
+- A–F 真实图片不进入仓库；当前只登记 Ground Truth，必须由用户在仓库外本地执行后才能声明 6/6；
 - Material FX V0.13 使用确定性本地像素分析，并以合成回归与私人样片本地 QA 分层验收；
 - 公开仓库不得加入 Case 001 / Case 002 的私人原图或私人 Ground Truth；
 - 私人回归仅按本地清单执行，缺少样片时必须标记“待验收”，不得伪造通过。

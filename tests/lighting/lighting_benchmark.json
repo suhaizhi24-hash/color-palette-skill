@@ -1,0 +1,52 @@
+{
+  "schema_version": "0.14.0",
+  "dataset": {
+    "name": "V0.14 Light Analysis 真实图片 Benchmark",
+    "privacy": "外部本地测试，不进入公开仓库",
+    "asset_policy": "仓库只登记规则与预期值；真实照片由用户在本地目录提供，不提交图片、路径、哈希或私人信息。"
+  },
+  "anchors": [
+    {
+      "id": "A",
+      "description": "户外直射阳光人像",
+      "match_stem": "A",
+      "expected": {"source": "natural", "quality": "hard", "ratio": "high"},
+      "status": "pending_external_asset"
+    },
+    {
+      "id": "B",
+      "description": "红背景商业婚纱棚拍",
+      "match_stem": "B",
+      "expected": {"source": "studio", "quality": "soft", "ratio": "medium"},
+      "status": "pending_external_asset"
+    },
+    {
+      "id": "C",
+      "description": "白棚时装全身硬光",
+      "match_stem": "C",
+      "expected": {"source": "studio", "quality": "hard", "ratio": "high"},
+      "status": "pending_external_asset"
+    },
+    {
+      "id": "D",
+      "description": "水下强烈太阳逆光",
+      "match_stem": "D",
+      "expected": {"source": "natural", "quality": "hard", "ratio": "high"},
+      "status": "pending_external_asset"
+    },
+    {
+      "id": "E",
+      "description": "夜街直闪与环境光",
+      "match_stem": "E",
+      "expected": {"source": "mixed", "quality": "hard", "ratio": "high"},
+      "status": "pending_external_asset"
+    },
+    {
+      "id": "F",
+      "description": "森林白裙自然漫射光",
+      "match_stem": "F",
+      "expected": {"source": "natural", "quality": "soft", "ratio": "medium"},
+      "status": "pending_external_asset"
+    }
+  ]
+}

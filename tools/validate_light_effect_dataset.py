@@ -51,7 +51,7 @@ def validate(root: Path, dataset_path: Path, schema_path: Path) -> dict:
         "checked_sample_count": checked,
         "material_fx_checked_sample_count": material_fx_checked,
         "issues": issues,
-        "note": "V0.13对公开合成样例执行Material FX算法回归；光线标签仍只校验Schema与文件完整性。",
+        "note": "公开合成样例继续执行Material FX算法回归；V0.14 Light规则由tests/lighting独立验证，真实A-F图片在仓库外验收。",
     }
 
 

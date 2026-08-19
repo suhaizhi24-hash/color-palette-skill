@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Color Palette Analysis 0.13.0",
+  "title": "Color Palette Analysis 0.14.0",
   "type": "object",
   "required": [
     "schema_version",
@@ -15,6 +15,7 @@
     "white_balance",
     "tonal_palette",
     "skin",
+    "lighting",
     "light",
     "material_effects",
     "effects",
@@ -22,7 +23,7 @@
     "render_policy"
   ],
   "properties": {
-    "schema_version": {"const": "0.13.0"},
+    "schema_version": {"const": "0.14.0"},
     "ruleset_version": {"const": "p1-rules-0.10.0"},
     "official_language": {"const": "zh-CN"},
     "zero_token": {"const": true},
@@ -113,6 +114,86 @@
         "backend_degraded": {"type": "boolean"}
       }
     },
+    "lighting": {
+      "type": "object",
+      "required": [
+        "ruleset_version",
+        "source",
+        "quality",
+        "ratio",
+        "subject_roi",
+        "debug"
+      ],
+      "properties": {
+        "ruleset_version": {"const": "lighting-0.14.0"},
+        "source": {
+          "type": "object",
+          "required": ["code", "display_name"],
+          "properties": {
+            "code": {
+              "enum": [
+                "natural",
+                "studio",
+                "flash",
+                "mixed",
+                "self_luminous",
+                "unknown"
+              ]
+            },
+            "display_name": {
+              "enum": ["自然光", "人工棚拍", "人工闪光", "混合光", "自发光", "暂不判定"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "quality": {
+          "type": "object",
+          "required": ["code", "display_name"],
+          "properties": {
+            "code": {"enum": ["hard", "soft", "not_applicable", "unknown"]},
+            "display_name": {"enum": ["硬光", "柔光", "不适用", "暂不判定"]}
+          },
+          "additionalProperties": false
+        },
+        "ratio": {
+          "type": "object",
+          "required": ["code", "display_name"],
+          "properties": {
+            "code": {"enum": ["low", "medium", "high", "not_applicable", "unknown"]},
+            "display_name": {"enum": ["低", "中", "高", "不适用", "暂不判定"]}
+          },
+          "additionalProperties": false
+        },
+        "subject_roi": {
+          "type": "object",
+          "required": ["type", "box", "valid_share"],
+          "properties": {
+            "type": {"enum": ["face", "upper_body", "full_body", "main_subject"]},
+            "box": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {"type": "integer", "minimum": 0}
+            },
+            "valid_share": {"type": "number", "minimum": 0, "maximum": 1}
+          },
+          "additionalProperties": false
+        },
+        "debug": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "light": {
+      "type": "object",
+      "required": ["source", "quality", "ratio", "status"],
+      "properties": {
+        "source": {"enum": ["自然光", "人工棚拍", "人工闪光", "混合光", "自发光", "暂不判定"]},
+        "quality": {"enum": ["硬光", "柔光", "不适用", "暂不判定"]},
+        "ratio": {"enum": ["低", "中", "高", "不适用", "暂不判定"]},
+        "status": {"enum": ["已分析", "兼容旧版"]}
+      },
+      "additionalProperties": false
+    },
     "material_effects": {
       "type": "object",
       "required": ["ruleset_version", "items", "summary", "status", "diagnostics"],
@@ -200,8 +281,19 @@
                 "结论": {"type": "string", "minLength": 1}
               },
               "additionalProperties": false
+            },
+            "光线构成": {
+              "type": "object",
+              "required": ["光源", "光质", "光比"],
+              "properties": {
+                "光源": {"enum": ["自然光", "人工棚拍", "人工闪光", "混合光", "自发光", "暂不判定"]},
+                "光质": {"enum": ["硬光", "柔光", "不适用", "暂不判定"]},
+                "光比": {"enum": ["低", "中", "高", "不适用", "暂不判定"]}
+              },
+              "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
         }
       }
     }

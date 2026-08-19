@@ -32,7 +32,7 @@ def _write_manifest(
     _write_json(
         root / "examples" / "public_examples_manifest.json",
         {
-            "version": "0.13.0",
+            "version": "0.14.0",
             "privacy": "公开",
             "license": "CC0-1.0",
             "origin": "程序生成，无真人、无私人素材、无外部版权依赖",
@@ -46,7 +46,7 @@ def _write_manifest(
         _write_json(
             root / "examples" / "public_examples_provenance.json",
             {
-                "version": "0.13.0",
+                "version": "0.14.0",
                 "privacy": "公开",
                 "license": "CC0-1.0",
                 "review_policy": "人工审核固定来源",
@@ -193,6 +193,32 @@ def test_unlisted_ground_truth_json_is_rejected(tmp_path: Path):
     _assert_error(result, "未授权Ground Truth/Golden JSON")
 
 
+def test_lighting_benchmark_rejects_embedded_private_asset_path(tmp_path: Path):
+    _write_manifest(tmp_path)
+    anchors = []
+    for anchor_id in "ABCDEF":
+        anchors.append(
+            {
+                "id": anchor_id,
+                "description": "外部测试",
+                "match_stem": anchor_id,
+                "expected": {"source": "natural", "quality": "soft", "ratio": "medium"},
+                "status": "pending_external_asset",
+                "private_path": f"/Users/private/{anchor_id}.jpg",
+            }
+        )
+    _write_json(
+        tmp_path / "tests" / "lighting" / "lighting_benchmark.json",
+        {
+            "schema_version": "0.14.0",
+            "dataset": {"privacy": "外部本地测试，不进入公开仓库"},
+            "anchors": anchors,
+        },
+    )
+    result = scan(tmp_path)
+    _assert_error(result, "包含路径、哈希或未授权字段")
+
+
 def test_public_ground_truth_requires_public_privacy_and_manifest_reference(
     tmp_path: Path,
 ):
@@ -238,7 +264,7 @@ def test_valid_ground_truth_references_manifest_image(tmp_path: Path):
 def test_public_analysis_requires_manifest_image_reference(tmp_path: Path):
     _write_manifest(tmp_path)
     _write_json(
-        tmp_path / "examples" / "output_v013" / "synthetic_portrait_analysis.json",
+        tmp_path / "examples" / "output_v014" / "synthetic_portrait_analysis.json",
         {
             "source": {
                 "filename": "customer.png",

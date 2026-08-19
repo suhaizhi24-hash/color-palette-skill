@@ -35,13 +35,13 @@ def test_light_effect_public_dataset_is_valid():
     assert result["material_fx_checked_sample_count"] == 4
 
 
-def test_analysis_schema_targets_v013():
+def test_analysis_schema_targets_v014():
     schema = json.loads((ROOT / "schemas" / "analysis.schema.json").read_text(encoding="utf-8"))
-    assert schema["properties"]["schema_version"]["const"] == "0.13.0"
+    assert schema["properties"]["schema_version"]["const"] == "0.14.0"
 
 
 def test_version_and_release_contract_are_consistent():
-    expected = "0.13.0"
+    expected = "0.14.0"
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     schema = json.loads((ROOT / "schemas" / "analysis.schema.json").read_text())
     policy = json.loads((ROOT / "config" / "output_policy.json").read_text())

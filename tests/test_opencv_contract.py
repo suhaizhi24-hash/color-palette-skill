@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_runtime_is_supported_opencv_4_x():
     major, minor = (int(part) for part in cv2.__version__.split(".")[:2])
     assert major == 4 and minor >= 14, (
-        f"V0.13.0仅支持OpenCV >=4.14,<5，当前为{cv2.__version__}"
+        f"V0.14.0仅支持OpenCV >=4.14,<5，当前为{cv2.__version__}"
     )
     assert callable(cv2.cvtColor)
     assert callable(cv2.CascadeClassifier)

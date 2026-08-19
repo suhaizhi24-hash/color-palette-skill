@@ -37,7 +37,7 @@ doctor_path = Path(sys.argv[8]).resolve()
 package_path = Path(color_palette.__file__).resolve()
 assert package_path == venv_root or venv_root in package_path.parents, package_path
 distribution = importlib.metadata.distribution("color-palette-skill")
-assert distribution.version == "0.13.0"
+assert distribution.version == "0.14.0"
 
 entries = sorted(output_dir.iterdir())
 assert len(entries) == 2 and all(path.is_file() for path in entries), entries
@@ -55,13 +55,29 @@ assert not list(output_dir.rglob("*.jpeg"))
 analysis = json.loads(analysis_path.read_text(encoding="utf-8"))
 schema = json.loads(schema_path.read_text(encoding="utf-8"))
 Draft202012Validator(schema).validate(analysis)
-assert analysis["schema_version"] == "0.13.0"
+assert analysis["schema_version"] == "0.14.0"
 assert analysis["official_language"] == "zh-CN"
 assert analysis["zero_token"] is True
 assert analysis["render_policy"]["generate_jpg"] is False
 assert analysis["render_policy"]["render_color_adjustment"] is False
 assert analysis["source"]["render_color_adjustment"] is False
 assert analysis["material_effects"]["ruleset_version"] == "material-fx-0.13.0"
+assert analysis["lighting"]["ruleset_version"] == "lighting-0.14.0"
+assert analysis["lighting"]["source"]["code"] in {
+    "natural", "studio", "flash", "mixed", "self_luminous", "unknown"
+}
+assert analysis["lighting"]["quality"]["code"] in {
+    "hard", "soft", "not_applicable", "unknown"
+}
+assert analysis["lighting"]["ratio"]["code"] in {
+    "low", "medium", "high", "not_applicable", "unknown"
+}
+visible_lighting = analysis["official_report"]["素材特效&光线构成"]["光线构成"]
+assert set(visible_lighting) == {"光源", "光质", "光比"}
+assert not any(
+    marker in json.dumps(analysis["official_report"], ensure_ascii=False)
+    for marker in ("confidence", "evidence", "subject_roi", "delta_ev")
+)
 assert analysis["source"]["sha256"] == hashlib.sha256(input_path.read_bytes()).hexdigest()
 assert analysis["official_report"]["官方模块"] == [
     "影调结构",
@@ -87,7 +103,7 @@ assert not any(
 )
 doctor = json.loads(doctor_path.read_text(encoding="utf-8"))
 assert doctor["status"] == "通过"
-assert doctor["tool_version"] == "0.13.0"
+assert doctor["tool_version"] == "0.14.0"
 assert doctor["zero_token"] is True
 
 result = {
@@ -110,6 +126,8 @@ result = {
     "json_schema": "通过",
     "input_unchanged": True,
     "render_color_adjustment": False,
+    "lighting_ruleset": analysis["lighting"]["ruleset_version"],
+    "lighting": visible_lighting,
 }
 result_path.parent.mkdir(parents=True, exist_ok=True)
 result_path.write_text(

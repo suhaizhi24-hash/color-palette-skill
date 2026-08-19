@@ -24,10 +24,69 @@
     "runtime_regular": "Hiragino Sans GB.ttc"
   },
   "light": {
-    "quality": "暂不判定",
-    "ratio": "中",
-    "source": "暂不判定",
-    "status": "P1-C待校准"
+    "quality": "硬光",
+    "ratio": "高",
+    "source": "自然光",
+    "status": "已分析"
+  },
+  "lighting": {
+    "debug": {
+      "color_temperature_role": "auxiliary_only_not_decisive",
+      "quality_features": {
+        "coarse_edge_strength": 0.035783,
+        "edge_sharpness": 2.220304,
+        "fine_edge_strength": 0.07945,
+        "localized_highlight": 0.120872,
+        "subject_dynamic_range": 0.448919,
+        "valid_share": 0.5576
+      },
+      "ratio_features": {
+        "delta_ev": 2.426402,
+        "light_level": 0.42217,
+        "lit_area_share": 0.35,
+        "shadow_area_share": 0.351007,
+        "shadow_level": 0.058186,
+        "spatial_coherence": 0.834969,
+        "subject_dynamic_range": 0.363983,
+        "valid_share": 0.5576
+      },
+      "source_features": {
+        "background_uniformity": 0.0,
+        "bright_component_count": 0,
+        "bright_component_share": 0.0,
+        "chromatic_spread": 0.075468,
+        "color_temperature_proxy": -0.188235,
+        "environment_texture": 0.003922,
+        "scene_dark_share": 0.427059,
+        "scene_highlight_share": 0.0,
+        "subject_background_ev": -1.147681,
+        "subject_separation": 0.145588,
+        "subject_valid_share": 0.5576
+      }
+    },
+    "quality": {
+      "code": "hard",
+      "display_name": "硬光"
+    },
+    "ratio": {
+      "code": "high",
+      "display_name": "高"
+    },
+    "ruleset_version": "lighting-0.14.0",
+    "source": {
+      "code": "natural",
+      "display_name": "自然光"
+    },
+    "subject_roi": {
+      "box": [
+        144,
+        120,
+        612,
+        984
+      ],
+      "type": "main_subject",
+      "valid_share": 0.5576
+    }
   },
   "material_effects": {
     "diagnostics": {
@@ -170,9 +229,9 @@
     ],
     "素材特效&光线构成": {
       "光线构成": {
-        "光比": "中",
-        "光源": "暂不判定",
-        "光质": "暂不判定"
+        "光比": "高",
+        "光源": "自然光",
+        "光质": "硬光"
       },
       "素材特效": {
         "标签": [
@@ -182,7 +241,7 @@
       }
     },
     "肤色锚点": [
-      "未检测到可用于稳定肤色分析的单人脸，样本不足，不输出肤色数值。"
+      "肤色分析未启用，不输出肤色锚点数值。"
     ],
     "色彩浓度": [
       "色彩饱和度中。",
@@ -216,19 +275,19 @@
       "mid": 0.377194
     }
   },
-  "schema_version": "0.13.0",
+  "schema_version": "0.14.0",
   "skin": {
     "available_backends": [
       "opencv"
     ],
     "backend_degraded": false,
-    "backend_note": "",
-    "detector": "opencv",
-    "face_count": 0,
+    "backend_note": "肤色分析已显式关闭",
+    "detector": "disabled",
+    "face_count": null,
     "primary_anchor": null,
-    "requested_backend": "opencv",
+    "requested_backend": "none",
     "secondary_anchor": null,
-    "status": "无人像"
+    "status": "未验证"
   },
   "source": {
     "analysis_source": "original",

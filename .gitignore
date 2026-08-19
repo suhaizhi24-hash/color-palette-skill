@@ -26,12 +26,21 @@ ci_output/
 *_color_report.png
 !examples/output_v012/*_analysis.json
 !examples/output_v012/*_color_report.png
+!examples/output_v014/*_analysis.json
+!examples/output_v014/*_color_report.png
 
 doctor*.json
 privacy_scan*.json
 light_effect_validation*.json
+lighting_benchmark_registry*.json
+lighting_benchmark_result*.json
 clean_wheel_smoke*.json
 wheel_smoke_output/
+
+# v0.14 光线分析本地合成 Preview（不得提交或视作真实照片 Benchmark）
+qa/light_v014_preview/
+qa/light_v014_preview_review/
+qa/light_v014_preview_review.zip
 
 .env
 .env.*

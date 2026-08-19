@@ -1,6 +1,6 @@
 {
-  "version": "0.13.0",
-  "release_channel": "material-fx-development",
+  "version": "0.14.0",
+  "release_channel": "light-analysis-development",
   "source_baseline": {
     "archive": "color-palette-skill-v0.12.0-source.zip",
     "sha256": "b73465c0671f366c1d9381f6112d4039fcaad1361225d9340f6f3386fbe57ddc",
@@ -27,6 +27,7 @@
       "Python compileall",
       "pytest",
       "JSON Schema校验",
+      "Light Analysis自动规则与A-F外部Benchmark登记校验",
       "公开Golden Dataset",
       "独立来源登记与隐私扫描",
       "Wheel构建与内容审计",
@@ -76,8 +77,17 @@
     "private_case_001": "待仓库外真实样片复验",
     "private_case_002": "待仓库外真实样片复验"
   },
+  "lighting": {
+    "ruleset": "lighting-0.14.0",
+    "source": ["natural", "studio", "flash", "mixed", "self_luminous", "unknown"],
+    "quality": ["hard", "soft", "not_applicable", "unknown"],
+    "ratio": ["low", "medium", "high", "not_applicable", "unknown"],
+    "subject_roi_order": ["face", "upper_body", "full_body", "main_subject"],
+    "color_temperature_role": "auxiliary_only_not_decisive",
+    "real_anchor_status": "A-F Ground Truth已登记，真实图片等待仓库外用户验证"
+  },
   "wheel": {
-    "file": "color_palette_skill-0.13.0-py3-none-any.whl",
+    "file": "color_palette_skill-0.14.0-py3-none-any.whl",
     "built_from": "触发工作流的github.sha",
     "sha256_evidence": "由同次Release Artifact工作流计算并随Wheel上传",
     "pure_python": true,
@@ -92,6 +102,8 @@
     "generator_writes_provenance": false
   },
   "known_risks": [
+    "A-F真实Light Anchor图片未进入仓库，不能在用户完成外部本地复验前声明6/6通过",
+    "Light Source为确定性视觉特征推断，复杂布光或重度后期可能需要降级为暂不判定",
     "Material FX为确定性视觉特征推断，不能证明作者实际使用的软件、滤镜或制作步骤",
     "Case 001与Case 002真实私人样片未进入仓库，合并前状态保持待本地复验",
     "OpenCV基础人脸检测可能漏检侧脸、遮挡或多人场景",
