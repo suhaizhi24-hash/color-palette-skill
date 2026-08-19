@@ -35,6 +35,13 @@ def test_ci_contains_cross_platform_matrix_and_wheel_smoke():
     assert "matrix.python-version == '3.12'" in text
 
 
+def test_optional_dlib_does_not_depend_on_apt_mirrors():
+    text = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    optional_dlib = text.split("  optional-dlib:\n", 1)[1]
+    assert "cmake --version" in optional_dlib
+    assert "apt-get" not in optional_dlib
+
+
 def test_ci_scans_checkout_before_build_or_fixture_generation():
     text = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     first_scan = text.index("Privacy scan of checkout")
