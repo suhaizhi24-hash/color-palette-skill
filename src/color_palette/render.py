@@ -284,10 +284,11 @@ def _effects_light(draw, fonts, analysis, box) -> None:
 
     draw.text((x1 + 21, y1 + 57), "素材特效", font=fonts.bold(17), fill="#4F6E59")
     y = y1 + 98
-    conclusion = report["素材特效"]["结论"]
-    for line in _wrap(draw, conclusion, fonts.regular(15), 270)[:4]:
-        draw.text((x1 + 26, y), line, font=fonts.regular(15), fill="#4B5355")
-        y += 27
+    labels = report["素材特效"].get("标签") or [report["素材特效"]["结论"]]
+    for label in labels[:5]:
+        for line in _wrap(draw, label, fonts.regular(15), 270)[:2]:
+            draw.text((x1 + 26, y), line, font=fonts.regular(15), fill="#4B5355")
+            y += 27
 
     draw.text((divider_x + 19, y1 + 57), "光线构成", font=fonts.bold(17), fill="#625746")
     y = y1 + 105

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .constants import OFFICIAL_MODULES
+from .material_fx import display_names
 
 
 def official_report(analysis: dict) -> dict:
@@ -56,7 +57,7 @@ def official_report(analysis: dict) -> dict:
     else:
         skin_lines = ["未检测到可用于稳定肤色分析的单人脸，样本不足，不输出肤色数值。"]
 
-    effects = analysis["effects"]
+    effect_labels = display_names(analysis)
     light = analysis["light"]
     report = {
         "官方语言": "中文（zh-CN）",
@@ -69,9 +70,8 @@ def official_report(analysis: dict) -> dict:
         "肤色锚点": skin_lines,
         "素材特效&光线构成": {
             "素材特效": {
-                "已识别": effects["detected"],
-                "未发现明显": effects["not_obvious"],
-                "结论": effects["conclusion"],
+                "标签": effect_labels,
+                "结论": "\n".join(effect_labels),
             },
             "光线构成": {
                 "光源": light["source"],

@@ -33,7 +33,7 @@ python -m pip install -e .
 Wheel 安装：
 
 ```bash
-python -m pip install color_palette_skill-0.12.0-py3-none-any.whl
+python -m pip install color_palette_skill-0.13.0-py3-none-any.whl
 ```
 
 ## 使用
@@ -48,7 +48,7 @@ color-palette photo.jpg --output ./result
 color-palette photo.jpg --output ./result --face-backend opencv
 ```
 
-V0.12.0 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
+V0.13.0 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
 OpenCV 4.x 运行完整测试。OpenCV 5.x 尚未纳入兼容性承诺，待完成独立兼容测试后再放开上限。
 
 其他选项：
@@ -87,6 +87,25 @@ color-palette-doctor
 
 禁止：曝光、白平衡、色相、饱和度、对比度调整；LUT、滤镜、美颜、锐化、降噪、柔焦、颗粒添加；生成式重绘。
 
+## Material FX V0.13
+
+素材特效模块会从最终图像的可见特征中进行多区域、多标签推断，当前支持：
+
+- 细颗粒 / 粗颗粒；
+- 柔化 / 高斯模糊 / 低清晰度；
+- 高光扩散；
+- RGB 色彩偏移；
+- 画质降低 / Digital Low-fi；
+- 胶片扫描质感、胶片边框、灰尘与划痕；
+- 同一张照片同时显示多个效果。
+
+分析会分别观察平坦区域、边缘区域、高光邻域，并排除自然景深、平滑肤色、
+真实强逆光、数字噪点、JPEG 块效应和真实物体纹理等竞争解释。正式 PNG 只显示
+简洁中文标签；内部置信度、证据与候选解释仅保存在 `analysis.json`。
+
+Material FX 是基于最终图像视觉特征的推断，不保证还原作者真实使用的软件、滤镜或制作步骤。
+完整分类、Schema 与排除规则见 [Material FX V0.13 规则](docs/MATERIAL_FX_V0.13.md)。
+
 ## Golden Dataset
 
 ```bash
@@ -117,7 +136,7 @@ python tools/privacy_scan.py .
 
 ## 当前阶段
 
-V0.12.0：首个开源 Beta 候选版本。
+V0.13.0：Material FX 多标签识别升级开发版。
 
 仓库配置了 Ubuntu、macOS、Windows 与 Python 3.10、3.12、3.13 的 GitHub Actions 矩阵。具体通过状态以当前 Pull Request 的 Actions 结果为准。
 

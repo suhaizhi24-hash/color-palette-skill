@@ -1,6 +1,6 @@
 {
-  "version": "0.12.0",
-  "release_channel": "open-source-beta-candidate",
+  "version": "0.13.0",
+  "release_channel": "material-fx-development",
   "source_baseline": {
     "archive": "color-palette-skill-v0.12.0-source.zip",
     "sha256": "b73465c0671f366c1d9381f6112d4039fcaad1361225d9340f6f3386fbe57ddc",
@@ -68,8 +68,16 @@
     "disabled": "none",
     "advisory_not_core_gate": true
   },
+  "material_fx": {
+    "schema": "0..N多标签",
+    "ruleset": "material-fx-0.13.0",
+    "public_display": "仅中文display_name逐行显示",
+    "roi": ["Flat", "Edge", "Face", "Highlight"],
+    "private_case_001": "待仓库外真实样片复验",
+    "private_case_002": "待仓库外真实样片复验"
+  },
   "wheel": {
-    "file": "color_palette_skill-0.12.0-py3-none-any.whl",
+    "file": "color_palette_skill-0.13.0-py3-none-any.whl",
     "built_from": "触发工作流的github.sha",
     "sha256_evidence": "由同次Release Artifact工作流计算并随Wheel上传",
     "pure_python": true,
@@ -84,6 +92,8 @@
     "generator_writes_provenance": false
   },
   "known_risks": [
+    "Material FX为确定性视觉特征推断，不能证明作者实际使用的软件、滤镜或制作步骤",
+    "Case 001与Case 002真实私人样片未进入仓库，合并前状态保持待本地复验",
     "OpenCV基础人脸检测可能漏检侧脸、遮挡或多人场景",
     "完全缺少CJK系统字体时报告仍会输出，但中文可读性取决于运行环境字体",
     "dlib为可选增强，不属于核心发布门禁"

@@ -1,12 +1,12 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "privacy": "公开",
   "license": "CC0-1.0",
   "origin": "程序生成，无真人、无私人素材、无外部版权依赖",
   "files": [
     {
-      "path": "examples/output_v012/synthetic_portrait_color_report.png",
-      "sha256": "23ef0e25609a5b7fa3f700f11728ee7f2dbe76104c2ea393280c1cb6bd2fcc74",
+      "path": "examples/output_v013/synthetic_portrait_color_report.png",
+      "sha256": "d5ddf10ddbe58a822e480c1bf818916b6d3c80c7abccf20af3c3ad173e675141",
       "license": "CC0-1.0",
       "generated": true
     },

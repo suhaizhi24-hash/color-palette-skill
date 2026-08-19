@@ -17,7 +17,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 PROVENANCE_PATH = ROOT / "examples" / "public_examples_provenance.json"
 FIXED_PUBLIC_FIXTURE_PATHS = (
     "examples/synthetic_portrait.png",
-    "examples/output_v012/synthetic_portrait_color_report.png",
+    "examples/output_v013/synthetic_portrait_color_report.png",
 )
 
 
@@ -142,7 +142,7 @@ def save_light_effects() -> list[tuple[Path, dict]]:
     grain = np.clip(base + noise, 0, 255).astype(np.uint8)
     path = OUT / "synthetic_grain.png"
     Image.fromarray(grain, "RGB").save(path)
-    items.append((path, {"光源": "合成测试光", "光质": "均匀", "光比": "低", "素材特效": ["颗粒"]}))
+    items.append((path, {"光源": "合成测试光", "光质": "均匀", "光比": "低", "素材特效": ["细颗粒"]}))
 
     # Synthetic vignette with no grain.
     yy, xx = np.mgrid[:height, :width]
@@ -154,7 +154,7 @@ def save_light_effects() -> list[tuple[Path, dict]]:
         vignette[..., channel] = np.clip(value * factor, 0, 255)
     path = OUT / "synthetic_vignette.png"
     Image.fromarray(vignette, "RGB").save(path)
-    items.append((path, {"光源": "合成测试光", "光质": "均匀", "光比": "中", "素材特效": ["暗角"]}))
+    items.append((path, {"光源": "合成测试光", "光质": "均匀", "光比": "中", "素材特效": []}))
     return items
 
 
@@ -184,7 +184,7 @@ def main() -> None:
             raise RuntimeError(f"生成结果哈希未通过独立来源审核：{relative}")
 
     manifest = {
-        "version": "0.12.0",
+        "version": "0.13.0",
         "privacy": "公开",
         "license": "CC0-1.0",
         "origin": "程序生成，无真人、无私人素材、无外部版权依赖",

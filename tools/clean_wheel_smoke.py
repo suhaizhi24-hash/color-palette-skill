@@ -32,11 +32,12 @@ schema_path = Path(sys.argv[4]).resolve()
 result_path = Path(sys.argv[5]).resolve()
 wheel_name = sys.argv[6]
 wheel_sha256 = sys.argv[7]
+doctor_path = Path(sys.argv[8]).resolve()
 
 package_path = Path(color_palette.__file__).resolve()
 assert package_path == venv_root or venv_root in package_path.parents, package_path
 distribution = importlib.metadata.distribution("color-palette-skill")
-assert distribution.version == "0.12.0"
+assert distribution.version == "0.13.0"
 
 entries = sorted(output_dir.iterdir())
 assert len(entries) == 2 and all(path.is_file() for path in entries), entries
@@ -54,10 +55,13 @@ assert not list(output_dir.rglob("*.jpeg"))
 analysis = json.loads(analysis_path.read_text(encoding="utf-8"))
 schema = json.loads(schema_path.read_text(encoding="utf-8"))
 Draft202012Validator(schema).validate(analysis)
-assert analysis["schema_version"] == "0.12.0"
+assert analysis["schema_version"] == "0.13.0"
 assert analysis["official_language"] == "zh-CN"
 assert analysis["zero_token"] is True
 assert analysis["render_policy"]["generate_jpg"] is False
+assert analysis["render_policy"]["render_color_adjustment"] is False
+assert analysis["source"]["render_color_adjustment"] is False
+assert analysis["material_effects"]["ruleset_version"] == "material-fx-0.13.0"
 assert analysis["source"]["sha256"] == hashlib.sha256(input_path.read_bytes()).hexdigest()
 assert analysis["official_report"]["官方模块"] == [
     "影调结构",
@@ -81,6 +85,10 @@ assert not any(
     requirement.casefold().split(";", 1)[0].strip().startswith(banned)
     for requirement in requirements
 )
+doctor = json.loads(doctor_path.read_text(encoding="utf-8"))
+assert doctor["status"] == "通过"
+assert doctor["tool_version"] == "0.13.0"
+assert doctor["zero_token"] is True
 
 result = {
     "status": "通过",
@@ -92,12 +100,16 @@ result = {
     "installed_from_clean_venv": True,
     "runtime_requirements": requirements,
     "paid_model_runtime_dependency": False,
+    "cli_help": "通过",
+    "doctor_status": doctor["status"],
+    "doctor_font_status": doctor["font"]["status"],
     "output_files": [path.name for path in files],
     "report_format": "PNG",
     "report_size": [1600, 1200],
     "jpg_jpeg_count": 0,
     "json_schema": "通过",
     "input_unchanged": True,
+    "render_color_adjustment": False,
 }
 result_path.parent.mkdir(parents=True, exist_ok=True)
 result_path.write_text(
@@ -159,6 +171,12 @@ def main(argv: list[str] | None = None) -> int:
             if sys.platform == "win32"
             else venv_root / "bin" / "color-palette"
         )
+        doctor_cli = (
+            venv_root / "Scripts" / "color-palette-doctor.exe"
+            if sys.platform == "win32"
+            else venv_root / "bin" / "color-palette-doctor"
+        )
+        doctor_path = temporary_root / "doctor.json"
         _run(
             [
                 str(python),
@@ -172,6 +190,8 @@ def main(argv: list[str] | None = None) -> int:
             cwd=temporary_root,
         )
         _run([str(python), "-m", "pip", "check"], cwd=temporary_root)
+        _run([str(cli), "--help"], cwd=temporary_root)
+        _run([str(doctor_cli), "--output", str(doctor_path)], cwd=temporary_root)
         _run(
             [
                 str(cli),
@@ -197,6 +217,7 @@ def main(argv: list[str] | None = None) -> int:
                 str(result_path),
                 wheel.name,
                 wheel_digest,
+                str(doctor_path),
             ],
             cwd=temporary_root,
         )

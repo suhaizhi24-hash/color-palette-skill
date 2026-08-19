@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Color Palette Analysis 0.12.0",
+  "title": "Color Palette Analysis 0.13.0",
   "type": "object",
   "required": [
     "schema_version",
@@ -16,12 +16,13 @@
     "tonal_palette",
     "skin",
     "light",
+    "material_effects",
     "effects",
     "official_report",
     "render_policy"
   ],
   "properties": {
-    "schema_version": {"const": "0.12.0"},
+    "schema_version": {"const": "0.13.0"},
     "ruleset_version": {"const": "p1-rules-0.10.0"},
     "official_language": {"const": "zh-CN"},
     "zero_token": {"const": true},
@@ -112,6 +113,26 @@
         "backend_degraded": {"type": "boolean"}
       }
     },
+    "material_effects": {
+      "type": "object",
+      "required": ["ruleset_version", "items", "summary", "status", "diagnostics"],
+      "properties": {
+        "ruleset_version": {"const": "material-fx-0.13.0"},
+        "items": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/materialEffectItem"}
+        },
+        "summary": {"type": "string", "minLength": 1},
+        "status": {"enum": ["已识别", "未发现明显"]},
+        "diagnostics": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "effects": {
+      "type": "object",
+      "required": ["detected", "not_obvious", "conclusion", "status"]
+    },
     "render_policy": {
       "type": "object",
       "required": ["official_report_format", "generate_jpg", "render_color_adjustment"],
@@ -145,8 +166,96 @@
             "肤色锚点",
             "素材特效&光线构成"
           ]
+        },
+        "素材特效&光线构成": {
+          "type": "object",
+          "required": ["素材特效", "光线构成"],
+          "properties": {
+            "素材特效": {
+              "type": "object",
+              "required": ["标签", "结论"],
+              "properties": {
+                "标签": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": [
+                      "细颗粒",
+                      "粗颗粒",
+                      "柔化",
+                      "高斯模糊",
+                      "低清晰度",
+                      "高光扩散",
+                      "RGB 色彩偏移",
+                      "画质降低",
+                      "胶片扫描质感",
+                      "胶片边框",
+                      "灰尘",
+                      "划痕",
+                      "未发现明显素材特效"
+                    ]
+                  }
+                },
+                "结论": {"type": "string", "minLength": 1}
+              },
+              "additionalProperties": false
+            }
+          }
         }
       }
+    }
+  },
+  "$defs": {
+    "materialEffectItem": {
+      "type": "object",
+      "required": [
+        "type",
+        "display_name",
+        "confidence",
+        "evidence",
+        "alternatives",
+        "regions"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "grain",
+            "softness",
+            "gaussian_blur",
+            "low_clarity",
+            "highlight_diffusion",
+            "rgb_shift",
+            "image_degradation",
+            "film_scan",
+            "film_border",
+            "dust",
+            "scratch"
+          ]
+        },
+        "subtype": {"enum": ["fine", "coarse"]},
+        "display_name": {
+          "enum": [
+            "细颗粒",
+            "粗颗粒",
+            "柔化",
+            "高斯模糊",
+            "低清晰度",
+            "高光扩散",
+            "RGB 色彩偏移",
+            "画质降低",
+            "胶片扫描质感",
+            "胶片边框",
+            "灰尘",
+            "划痕"
+          ]
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+        "alternatives": {"type": "array", "items": {"type": "string"}},
+        "regions": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
     }
   }
 }

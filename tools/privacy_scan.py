@@ -94,7 +94,7 @@ PUBLIC_JSON_ALLOWLIST = frozenset(
         "config/output_policy.json",
         "examples/golden_ground_truth.example.json",
         "examples/light_effect_ground_truth.example.json",
-        "examples/output_v012/synthetic_portrait_analysis.json",
+        "examples/output_v013/synthetic_portrait_analysis.json",
         "examples/public_examples_manifest.json",
         "examples/public_examples_provenance.json",
         "release_manifest.json",
@@ -110,10 +110,10 @@ PUBLIC_GROUND_TRUTH_JSONS = frozenset(
     }
 )
 PUBLIC_ANALYSIS_JSONS = frozenset(
-    {"examples/output_v012/synthetic_portrait_analysis.json"}
+    {"examples/output_v013/synthetic_portrait_analysis.json"}
 )
 PUBLIC_IMAGE_LICENSE = "CC0-1.0"
-PUBLIC_RELEASE_VERSION = "0.12.0"
+PUBLIC_RELEASE_VERSION = "0.13.0"
 PUBLIC_MANIFEST_ORIGIN = "程序生成，无真人、无私人素材、无外部版权依赖"
 
 SECRET_PATTERNS = {

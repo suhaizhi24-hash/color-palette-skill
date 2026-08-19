@@ -32,7 +32,7 @@ python tools/validate_schemas.py .
 python tools/validate_light_effect_dataset.py --root .
 color-palette-doctor
 python -m build --wheel
-python tools/audit_wheel.py dist --expected-version 0.12.0
+python tools/audit_wheel.py dist --expected-version 0.13.0
 python tools/clean_wheel_smoke.py dist \
   --input examples/public/synthetic_srgb_icc.png \
   --schema schemas/analysis.schema.json \

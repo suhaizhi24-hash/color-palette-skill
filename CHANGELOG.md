@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0
+
+- Material FX 升级为 0..N 多标签结构，正式报告仅显示中文效果名称；
+- 新增细/粗颗粒、柔化/高斯模糊、高光扩散、RGB 色彩偏移、画质降低与胶片扫描类视觉效果识别；
+- 新增 Flat / Edge / Face / Highlight ROI 策略与竞争解释排除规则；
+- 增加干净数码、自然景深、强逆光、高饱和等负向回归；
+- 新增真实 Case 001 / Case 002 本地 QA 清单，不提交私人样片或私人 Ground Truth；
+- 分析 Schema 升级到 0.13.0，并保留旧 `effects` 读取回退；
+- 保持 1600×1200、PNG + JSON、中文七模块、原图不修改与 Zero-token 契约。
+
 ## 0.12.0
 
 - 新增 Windows / macOS / Ubuntu CI 矩阵；
