@@ -42,6 +42,16 @@ def test_optional_dlib_does_not_depend_on_apt_mirrors():
     assert "apt-get" not in optional_dlib
 
 
+def test_optional_cjk_font_install_cannot_block_core_ci():
+    text = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    font_step = text.split("Install CJK font on Ubuntu (best effort)", 1)[1].split(
+        "Install package and development tools", 1
+    )[0]
+    assert "continue-on-error: true" in font_step
+    assert "timeout-minutes: 3" in font_step
+    assert "timeout 150s" in font_step
+
+
 def test_ci_scans_checkout_before_build_or_fixture_generation():
     text = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     first_scan = text.index("Privacy scan of checkout")
