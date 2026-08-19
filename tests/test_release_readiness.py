@@ -46,13 +46,23 @@ def test_release_workflow_runs_complete_gates_in_safe_order():
     public_golden = text.index("运行公开 Golden Dataset")
     wheel_build = text.index("python -m build --wheel")
     wheel_audit = text.index("python tools/audit_wheel.py dist")
+    kit_build = text.index("python tools/build_codex_kit.py dist")
+    kit_verify = text.index("python tools/verify_codex_kit.py")
     clean_install = text.index("python tools/clean_wheel_smoke.py dist")
-    wheel_hash = text.index("记录 Wheel SHA-256 与源码 commit")
+    wheel_hash = text.index("记录 Wheel 与 Codex Kit SHA-256 及源码 commit")
     artifact_upload = text.index("上传已验证的发布候选 Artifact")
 
     assert first_privacy_scan < project_install < wheel_build
     assert second_privacy_scan < schema_evidence < public_golden < wheel_build
-    assert wheel_build < wheel_audit < clean_install < wheel_hash < artifact_upload
+    assert (
+        wheel_build
+        < wheel_audit
+        < kit_build
+        < kit_verify
+        < clean_install
+        < wheel_hash
+        < artifact_upload
+    )
     assert "generate_public_fixtures.py" not in text
 
     required_markers = (
@@ -67,7 +77,9 @@ def test_release_workflow_runs_complete_gates_in_safe_order():
         "validate_light_effect_dataset.py",
         "color-palette --help",
         "color-palette-doctor",
-        "--expected-version 0.14.0",
+        "build_codex_kit.py",
+        "verify_codex_kit.py",
+        "--expected-version 0.14.1",
         "run_lighting_benchmark.py --manifest-only",
         "SOURCE_DATE_EPOCH",
         "{'.jpg', '.jpeg'}",
@@ -85,6 +97,7 @@ def test_release_artifact_contains_wheel_hash_commit_and_gate_evidence():
 
     for marker in (
         "dist/*.whl",
+        "dist/color-palette-codex-kit-v0.14.1.zip",
         "dist/SHA256SUMS.txt",
         "dist/SOURCE_COMMIT.txt",
         "privacy_scan_release.json",
@@ -95,6 +108,8 @@ def test_release_artifact_contains_wheel_hash_commit_and_gate_evidence():
         "doctor_release.json",
         "wheel_audit_release.json",
         "clean_wheel_smoke_release.json",
+        "codex_kit_build_release.json",
+        "codex_kit_smoke_release.json",
         "ci_output/",
         "if-no-files-found: error",
     ):

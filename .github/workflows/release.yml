@@ -71,7 +71,7 @@ jobs:
           major,minor=map(int,cv2.__version__.split('.')[:2]);
           print('OpenCV', cv2.__version__);
           assert major == 4 and minor >= 14,
-          f'V0.14.0要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
+          f'V0.14.x要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
 
       - name: 校验 Lighting A-F Benchmark 登记
         run: >-
@@ -126,8 +126,21 @@ jobs:
       - name: 审计 Wheel
         run: >-
           python tools/audit_wheel.py dist
-          --expected-version 0.14.0
+          --expected-version 0.14.1
           --output wheel_audit_release.json
+
+      - name: 构建 Codex 快速体验包
+        run: >-
+          python tools/build_codex_kit.py dist
+          --output dist/color-palette-codex-kit-v0.14.1.zip
+          --result codex_kit_build_release.json
+
+      - name: 验证 Codex Kit 干净安装与跨路径
+        run: >-
+          python tools/verify_codex_kit.py
+          dist/color-palette-codex-kit-v0.14.1.zip
+          --schema schemas/analysis.schema.json
+          --result codex_kit_smoke_release.json
 
       - name: 全新虚拟环境安装与 CLI PNG + JSON 烟雾测试
         run: >-
@@ -145,25 +158,28 @@ jobs:
           assert not files, files;
           print('JPG/JPEG输出数量：0')"
 
-      - name: 记录 Wheel SHA-256 与源码 commit
+      - name: 记录 Wheel 与 Codex Kit SHA-256 及源码 commit
         run: >-
           python -c "import hashlib, subprocess;
           from pathlib import Path;
           wheels=sorted(Path('dist').glob('*.whl'));
           assert len(wheels) == 1, wheels;
-          wheel=wheels[0];
-          digest=hashlib.sha256(wheel.read_bytes()).hexdigest();
+          kits=sorted(Path('dist').glob('color-palette-codex-kit-v*.zip'));
+          assert len(kits) == 1, kits;
+          assets=wheels+kits;
           commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip();
-          (Path('dist') / 'SHA256SUMS.txt').write_text(digest + '  ' + wheel.name + '\n', encoding='utf-8');
+          lines=[hashlib.sha256(asset.read_bytes()).hexdigest() + '  ' + asset.name for asset in assets];
+          (Path('dist') / 'SHA256SUMS.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8');
           (Path('dist') / 'SOURCE_COMMIT.txt').write_text(commit + '\n', encoding='utf-8');
-          print(wheel.name, digest, commit)"
+          print(*lines, commit, sep='\n')"
 
       - name: 上传已验证的发布候选 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: color-palette-skill-v0.14.0-${{ github.sha }}
+          name: color-palette-skill-v0.14.1-${{ github.sha }}
           path: |
             dist/*.whl
+            dist/color-palette-codex-kit-v0.14.1.zip
             dist/SHA256SUMS.txt
             dist/SOURCE_COMMIT.txt
             privacy_scan_release.json
@@ -174,6 +190,8 @@ jobs:
             doctor_release.json
             wheel_audit_release.json
             clean_wheel_smoke_release.json
+            codex_kit_build_release.json
+            codex_kit_smoke_release.json
             ci_output/
           if-no-files-found: error
           retention-days: 14

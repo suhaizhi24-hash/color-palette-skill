@@ -59,7 +59,7 @@ jobs:
           major,minor=map(int,cv2.__version__.split('.')[:2]);
           print('OpenCV', cv2.__version__);
           assert major==4 and minor>=14,
-          f'V0.14.0 requires OpenCV >=4.14,<5, got {cv2.__version__}'"
+          f'V0.14.x requires OpenCV >=4.14,<5, got {cv2.__version__}'"
 
       - name: Validate Lighting A-F benchmark registry
         run: >-
@@ -90,8 +90,23 @@ jobs:
       - name: Audit built wheel
         run: >-
           python tools/audit_wheel.py dist
-          --expected-version 0.14.0
+          --expected-version 0.14.1
           --output wheel_audit.json
+
+      - name: Build Codex experience kit
+        if: matrix.python-version == '3.12'
+        run: >-
+          python tools/build_codex_kit.py dist
+          --output dist/color-palette-codex-kit-v0.14.1.zip
+          --result codex_kit_build.json
+
+      - name: Verify Codex kit clean install and portable paths
+        if: matrix.python-version == '3.12'
+        run: >-
+          python tools/verify_codex_kit.py
+          dist/color-palette-codex-kit-v0.14.1.zip
+          --schema schemas/analysis.schema.json
+          --result codex_kit_smoke.json
 
       - name: Clean virtual environment Wheel install and CLI smoke
         run: >-
@@ -110,12 +125,15 @@ jobs:
           name: diagnostics-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
             dist/*.whl
+            dist/color-palette-codex-kit-v0.14.1.zip
             doctor.json
             privacy_scan.json
             light_effect_validation.json
             lighting_benchmark_registry.json
             wheel_audit.json
             clean_wheel_smoke.json
+            codex_kit_build.json
+            codex_kit_smoke.json
             ci_output/
           if-no-files-found: ignore
 

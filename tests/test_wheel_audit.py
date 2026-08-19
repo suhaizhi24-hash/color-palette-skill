@@ -13,7 +13,7 @@ import pytest
 from tools.audit_wheel import audit_wheel, main
 
 
-DIST_INFO = "color_palette_skill-0.14.0.dist-info"
+DIST_INFO = "color_palette_skill-0.14.1.dist-info"
 
 
 def _record(files: dict[str, bytes]) -> bytes:
@@ -35,14 +35,14 @@ def _wheel(
     *,
     extra: dict[str, bytes] | None = None,
     metadata_extra: bytes = b"",
-    filename: str = "color_palette_skill-0.14.0-py3-none-any.whl",
+    filename: str = "color_palette_skill-0.14.1-py3-none-any.whl",
 ) -> Path:
     files = {
-        "color_palette/__init__.py": b'__version__ = "0.14.0"\n',
+        "color_palette/__init__.py": b'__version__ = "0.14.1"\n',
         f"{DIST_INFO}/METADATA": (
             b"Metadata-Version: 2.4\n"
             b"Name: color-palette-skill\n"
-            b"Version: 0.14.0\n"
+            b"Version: 0.14.1\n"
             b"Requires-Dist: Pillow>=10\n"
             + metadata_extra
             + b"\n"
@@ -65,7 +65,7 @@ def _wheel(
 
 def test_valid_pure_python_wheel_passes(tmp_path):
     path = _wheel(tmp_path)
-    result = audit_wheel(path, expected_version="0.14.0")
+    result = audit_wheel(path, expected_version="0.14.1")
     assert result["status"] == "通过", result["errors"]
     assert result["paid_model_runtime_dependency"] is False
     assert result["runtime_dependencies"] == ["pillow"]
@@ -180,7 +180,7 @@ def test_record_hash_mismatch_is_rejected(tmp_path):
 
 def test_cli_accepts_directory_for_windows_compatible_glob_handling(tmp_path):
     _wheel(tmp_path)
-    assert main([str(tmp_path), "--expected-version", "0.14.0"]) == 0
+    assert main([str(tmp_path), "--expected-version", "0.14.1"]) == 0
 
 
 def test_ci_audits_wheel_before_install_and_smoke():
@@ -194,4 +194,4 @@ def test_ci_audits_wheel_before_install_and_smoke():
     assert build < audit < clean_install_and_smoke
     assert "python tools/audit_wheel.py dist" in workflow
     assert "python tools/clean_wheel_smoke.py dist" in workflow
-    assert "--expected-version 0.14.0" in workflow
+    assert "--expected-version 0.14.1" in workflow

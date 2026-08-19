@@ -3,12 +3,12 @@ name: color-palette-skill
 description: Local-first、Zero-token 的中文照片色彩分析与 4:3 PNG/JSON 报告 Skill。用于分析影调、明暗、色彩浓度、白平衡与色相、肤色、素材特效、光线，以及涉及调色、LUT、Camera/Film Emulation 的任务；相关知识优先读取中央摄影知识树。
 ---
 
-# 调色盘 / 色彩卡片 SKILL V0.14.0（中文官方框架版）
+# 调色盘 / 色彩卡片 SKILL V0.14.1（中文官方框架版）
 
 ## 定位
 Local-first / Zero-token 的专业照片色彩分析工具。
 
-> 当前状态：**v0.14.0 Candidate，工程实现与 CI 已通过，A–F 真实照片 Benchmark 尚未完成。**
+> 当前状态：**v0.14.1 Candidate，仅优化安装与 Codex 快速体验；分析规则沿用 v0.14.0，A–F 真实照片 Benchmark 尚未完成。**
 > 在外部真实照片完成 6/6 验收前，不得将本候选版本标记为真实照片验证通过。
 
 ## 最高规则 0：官方语言必须为中文

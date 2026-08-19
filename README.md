@@ -2,6 +2,61 @@
 
 Local-first、Zero-token 的中文照片色彩分析工具。项目只分析照片，不自动调色、不套用 LUT、不调用 OpenAI API 或其他付费大模型接口，也不要求 API Key。
 
+## 🚀 3 分钟开始使用
+
+### 方法 A：使用 Codex（推荐新用户）
+
+1. 在 GitHub Release 下载：
+   `color-palette-codex-kit-v0.14.1.zip`
+
+2. 解压 ZIP。
+
+3. 把需要分析的照片复制到这个文件夹。
+
+4. 使用 Codex 打开这个文件夹。
+
+5. 打开 `CODEX_PROMPT.txt`，把内容发送给 Codex。
+
+Codex 会自动：
+
+- 检查 Python
+- 安装调色盘
+- 运行环境诊断
+- 找到照片
+- 执行本地分析
+- 打开生成的 PNG 报告
+
+调色盘分析引擎完全本地运行，不调用 OpenAI API。
+
+详细图文步骤见 [Codex 快速体验指南](docs/CODEX_QUICKSTART.md)。
+
+### 方法 B：命令行安装
+
+需要 Python 3.10 或更高版本：
+
+```bash
+python -m pip install color_palette_skill-0.14.1-py3-none-any.whl
+color-palette-doctor
+color-palette photo.jpg --output ./result
+```
+
+## 结果示例
+
+```text
+输入照片
+   ↓
+Codex / CLI
+   ↓
+Local color analysis
+   ↓
+analysis.json
+color_report.png
+```
+
+下面的报告来自程序生成的公开合成样片，不包含私人照片：
+
+![公开合成示例报告](examples/output_v014/synthetic_portrait_color_report.png)
+
 ## 摄影知识 Consumer
 
 本项目从中央摄影知识树读取色彩科学、调色、LUT、模拟边界、Rule ID 与 Evidence Status；中央知识树负责“知道什么”，本项目负责“如何分析和输出”。集成不复制中央 Memory，也不改变现有 Zero-token 图片分析与正式报告协议。
@@ -28,22 +83,6 @@ output/
 6. 肤色锚点
 7. 素材特效&光线构成
 
-## 安装
-
-需要 Python 3.10 或更高版本。
-
-开发安装：
-
-```bash
-python -m pip install -e .
-```
-
-Wheel 安装：
-
-```bash
-python -m pip install color_palette_skill-0.14.0-py3-none-any.whl
-```
-
 ## 使用
 
 ```bash
@@ -56,7 +95,7 @@ color-palette photo.jpg --output ./result
 color-palette photo.jpg --output ./result --face-backend opencv
 ```
 
-V0.14.0 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
+V0.14.x 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
 OpenCV 4.x 运行完整测试。OpenCV 5.x 尚未纳入兼容性承诺，待完成独立兼容测试后再放开上限。
 
 其他选项：
@@ -166,9 +205,19 @@ examples/public_examples_manifest.json
 python tools/privacy_scan.py .
 ```
 
+## 开发者安装
+
+仅参与源码开发时使用 editable install：
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+普通用户请优先下载 Codex Experience Kit 或正式 Wheel，不需要克隆仓库。
+
 ## 当前阶段
 
-V0.14.0：Light Analysis Intelligence 光线构成升级开发版。
+V0.14.1 Candidate：仅优化下载、安装与 Codex 快速体验；色彩分析、Light Analysis、Material FX、肤色算法、中文七模块和 PNG-only 协议均沿用 V0.14.0。
 
 仓库配置了 Ubuntu、macOS、Windows 与 Python 3.10、3.12、3.13 的 GitHub Actions 矩阵。具体通过状态以当前 Pull Request 的 Actions 结果为准。
 

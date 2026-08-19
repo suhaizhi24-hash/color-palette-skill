@@ -1,6 +1,6 @@
 {
-  "version": "0.14.0",
-  "release_channel": "light-analysis-development",
+  "version": "0.14.1",
+  "release_channel": "codex-experience-candidate",
   "source_baseline": {
     "archive": "color-palette-skill-v0.12.0-source.zip",
     "sha256": "b73465c0671f366c1d9381f6112d4039fcaad1361225d9340f6f3386fbe57ddc",
@@ -31,6 +31,8 @@
       "公开Golden Dataset",
       "独立来源登记与隐私扫描",
       "Wheel构建与内容审计",
+      "Codex Kit固定结构、独立来源与敏感内容审计",
+      "Codex Kit全新虚拟环境安装与英文/中文/空格路径测试",
       "全新虚拟环境安装与pip check",
       "CLI仅生成PNG与JSON且JPG/JPEG数量为0",
       "OpenAI/API与网络运行时必要依赖扫描"
@@ -87,11 +89,26 @@
     "real_anchor_status": "A-F Ground Truth已登记，真实图片等待仓库外用户验证"
   },
   "wheel": {
-    "file": "color_palette_skill-0.14.0-py3-none-any.whl",
+    "file": "color_palette_skill-0.14.1-py3-none-any.whl",
     "built_from": "触发工作流的github.sha",
     "sha256_evidence": "由同次Release Artifact工作流计算并随Wheel上传",
     "pure_python": true,
     "paid_model_runtime_dependency": false
+  },
+  "codex_kit": {
+    "file": "color-palette-codex-kit-v0.14.1.zip",
+    "members": [
+      "START_HERE.md",
+      "CODEX_PROMPT.txt",
+      "color_palette_skill-0.14.1-py3-none-any.whl",
+      "sample/synthetic_sample.png"
+    ],
+    "sample_source": "examples/synthetic_portrait.png",
+    "sample_provenance_required": true,
+    "path_tests": ["english-path", "中文路径", "path with spaces"],
+    "private_assets": false,
+    "font_files": false,
+    "secret_or_token_findings": 0
   },
   "privacy": {
     "private_images_in_public_source": false,
