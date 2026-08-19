@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.1
+
+- 新增普通用户优先的 README 三分钟快速体验与公开合成报告示例；
+- 新增 macOS / Windows Codex 快速指南、`CODEX_PROMPT.txt` 与 `START_HERE.md`；
+- 新增固定结构、独立来源校验、可复现构建的 Codex Experience Kit；
+- 新增体验包结构、解压安装、doctor、PNG + JSON 和英文/中文/空格路径回归；
+- 不修改色彩分析、Light Analysis、Material FX、肤色算法、七模块或 PNG-only 协议。
+
 ## 0.14.0
 
 - 新增独立 Light Source 分类：自然光、人工棚拍、人工闪光、混合光、自发光与可靠降级；

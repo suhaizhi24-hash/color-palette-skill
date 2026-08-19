@@ -37,7 +37,7 @@ doctor_path = Path(sys.argv[8]).resolve()
 package_path = Path(color_palette.__file__).resolve()
 assert package_path == venv_root or venv_root in package_path.parents, package_path
 distribution = importlib.metadata.distribution("color-palette-skill")
-assert distribution.version == "0.14.0"
+assert distribution.version == "0.14.1"
 
 entries = sorted(output_dir.iterdir())
 assert len(entries) == 2 and all(path.is_file() for path in entries), entries
@@ -103,7 +103,7 @@ assert not any(
 )
 doctor = json.loads(doctor_path.read_text(encoding="utf-8"))
 assert doctor["status"] == "通过"
-assert doctor["tool_version"] == "0.14.0"
+assert doctor["tool_version"] == "0.14.1"
 assert doctor["zero_token"] is True
 
 result = {

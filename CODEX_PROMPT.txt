@@ -1,0 +1,53 @@
+请使用当前文件夹中的调色盘 / 色彩卡片分析我的照片。
+
+请按以下顺序自动完成，不要要求我自己输入终端命令：
+
+1. 检查当前系统是否有 Python 3.10 或更高版本。
+
+2. 检查 `color-palette --help` 是否可用。
+
+3. 如果调色盘尚未安装：
+   - 在当前目录寻找：
+     color_palette_skill-*.whl
+   - 使用当前 Python 环境或独立虚拟环境安装。
+   - 不要修改系统级 Python 配置。
+
+4. 运行：
+   color-palette-doctor
+
+5. 在当前文件夹寻找照片：
+   JPG / JPEG / PNG / WebP
+
+6. 不分析：
+   - synthetic_sample.png
+   - 已生成的 *_color_report.png
+
+7. 如果只有一张用户照片，直接分析。
+
+8. 如果有多张用户照片：
+   - 先列出文件名
+   - 逐张分析
+   - 每张使用独立输出目录或避免覆盖
+
+9. 对每张照片运行：
+
+   color-palette "<照片路径>" --output ./result
+
+10. 完成后找到：
+
+   *_color_report.png
+
+   并打开给我查看。
+
+11. 同时确认：
+   - *_analysis.json 已生成
+   - 没有 JPG/JPEG 正式报告输出
+   - 原始照片未被修改
+
+12. 如果任何步骤失败：
+   - 返回具体错误
+   - 不修改照片
+   - 不自行修改分析规则
+   - 不调用外部付费 API
+
+这个工具的核心分析必须保持 Local-first / Zero-token。

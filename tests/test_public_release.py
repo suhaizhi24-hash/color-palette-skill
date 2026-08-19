@@ -41,7 +41,8 @@ def test_analysis_schema_targets_v014():
 
 
 def test_version_and_release_contract_are_consistent():
-    expected = "0.14.0"
+    package_version = "0.14.1"
+    analysis_contract = "0.14.0"
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     schema = json.loads((ROOT / "schemas" / "analysis.schema.json").read_text())
     policy = json.loads((ROOT / "config" / "output_policy.json").read_text())
@@ -53,13 +54,19 @@ def test_version_and_release_contract_are_consistent():
         (ROOT / "examples" / "public_examples_provenance.json").read_text()
     )
 
-    assert __version__ == expected
-    assert f'version = "{expected}"' in pyproject
-    assert schema["properties"]["schema_version"]["const"] == expected
-    assert policy["policy_version"] == expected
-    assert release["version"] == expected
-    assert public_manifest["version"] == expected
-    assert provenance["version"] == expected
+    assert __version__ == package_version
+    assert f'version = "{package_version}"' in pyproject
+    assert schema["properties"]["schema_version"]["const"] == analysis_contract
+    assert policy["policy_version"] == analysis_contract
+    assert release["version"] == package_version
+    assert public_manifest["version"] == analysis_contract
+    assert provenance["version"] == analysis_contract
+    assert release["wheel"]["file"] == (
+        f"color_palette_skill-{package_version}-py3-none-any.whl"
+    )
+    assert release["codex_kit"]["file"] == (
+        f"color-palette-codex-kit-v{package_version}.zip"
+    )
     assert release["official_language"] == OFFICIAL_LANGUAGE == "zh-CN"
     assert release["face_backend"]["default"] == DEFAULT_FACE_BACKEND == "opencv"
     assert release["face_backend"]["opencv_supported"] == ">=4.14,<5"

@@ -19,6 +19,9 @@ dist/
 wheelhouse/
 *.egg-info/
 *.whl
+color-palette-codex-kit-v*.zip
+codex_kit_build*.json
+codex_kit_smoke*.json
 
 output/
 ci_output/

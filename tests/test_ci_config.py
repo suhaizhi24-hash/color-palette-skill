@@ -29,6 +29,27 @@ def test_ci_contains_cross_platform_matrix_and_wheel_smoke():
     assert "optional-dlib" in text
     assert text.count("persist-credentials: false") == 2
     assert "dist/*.whl" in text
+    assert "build_codex_kit.py" in text
+    assert "verify_codex_kit.py" in text
+    assert "color-palette-codex-kit-v0.14.1.zip" in text
+    assert "matrix.python-version == '3.12'" in text
+
+
+def test_optional_dlib_does_not_depend_on_apt_mirrors():
+    text = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    optional_dlib = text.split("  optional-dlib:\n", 1)[1]
+    assert "cmake --version" in optional_dlib
+    assert "apt-get" not in optional_dlib
+
+
+def test_optional_cjk_font_install_cannot_block_core_ci():
+    text = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    font_step = text.split("Install CJK font on Ubuntu (best effort)", 1)[1].split(
+        "Install package and development tools", 1
+    )[0]
+    assert "continue-on-error: true" in font_step
+    assert "timeout-minutes: 3" in font_step
+    assert "timeout 150s" in font_step
 
 
 def test_ci_scans_checkout_before_build_or_fixture_generation():
