@@ -36,6 +36,18 @@ def test_release_workflow_is_read_only_and_artifact_only():
     assert "actions/upload-artifact@v4" in text
 
 
+def test_release_font_install_is_bounded_and_non_blocking():
+    text = _workflow_text()
+    step = text.split("- name: 安装系统中文字体（限时、可降级）", 1)[1].split(
+        "- name:", 1
+    )[0]
+
+    assert "continue-on-error: true" in step
+    assert "timeout-minutes: 3" in step
+    assert "timeout 150s sudo apt-get -o Acquire::Retries=1 update" in step
+    assert "timeout 30s sudo apt-get install -y fonts-noto-cjk" in step
+
+
 def test_release_workflow_runs_complete_gates_in_safe_order():
     text = _workflow_text()
     smoke = (ROOT / "tools" / "clean_wheel_smoke.py").read_text(encoding="utf-8")
