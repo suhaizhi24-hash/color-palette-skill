@@ -29,8 +29,8 @@ ci_output/
 *_color_report.png
 !examples/output_v012/*_analysis.json
 !examples/output_v012/*_color_report.png
-!examples/output_v014/*_analysis.json
-!examples/output_v014/*_color_report.png
+!examples/output_v015/*_analysis.json
+!examples/output_v015/*_color_report.png
 
 doctor*.json
 privacy_scan*.json
@@ -44,6 +44,9 @@ wheel_smoke_output/
 qa/light_v014_preview/
 qa/light_v014_preview_review/
 qa/light_v014_preview_review.zip
+
+# v0.15 定量分析开发 Preview（合成数据，可本地复算，不属于正式报告UI）
+qa/quant_v015_preview/
 
 .env
 .env.*

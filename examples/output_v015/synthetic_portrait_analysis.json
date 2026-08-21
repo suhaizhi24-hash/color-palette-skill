@@ -1,0 +1,1395 @@
+{
+  "analysis": {
+    "valid_pixel_share": 1.0,
+    "working_height": 1200,
+    "working_width": 900
+  },
+  "color_dna": {
+    "C50": 18.3604,
+    "C90": 22.1385,
+    "L50": 45.1319,
+    "L75_minus_L25": 46.1486,
+    "L95_minus_L5": 60.8849,
+    "black_floor_p1": 22.8399,
+    "highlight_headroom": 13.2744,
+    "lighting_confidence": 0.58,
+    "material_fx_confidence_max": null,
+    "neutral_a": 1.7366,
+    "neutral_b": -3.9529,
+    "neutral_coverage": 0.375,
+    "neutral_share": 0.19103056,
+    "shoulder_ratio": 0.252,
+    "subject_background_delta_e00": 18.3974,
+    "subject_background_delta_l": -18.7441,
+    "toe_ratio": 0.0673
+  },
+  "contrast": {
+    "description": "明暗层次清晰，整体反差保持适中。",
+    "level": "中",
+    "span_l": 60.89
+  },
+  "effects": {
+    "conclusion": "未发现明显素材特效",
+    "detected": [],
+    "not_obvious": [],
+    "status": "未发现明显"
+  },
+  "font_policy": {
+    "emergency_fallback": false,
+    "fallback_active": true,
+    "platform": "Darwin",
+    "preferred": "PingFang SC（苹方简）",
+    "runtime_bold": "Hiragino Sans GB.ttc",
+    "runtime_regular": "Hiragino Sans GB.ttc"
+  },
+  "light": {
+    "quality": "硬光",
+    "ratio": "高",
+    "source": "自然光",
+    "status": "已分析"
+  },
+  "lighting": {
+    "debug": {
+      "classifiers": {
+        "quality": {
+          "alternatives": [
+            {
+              "code": "soft",
+              "confidence": 0.35,
+              "display_name": "柔光"
+            },
+            {
+              "code": "unknown",
+              "confidence": 0.041073,
+              "display_name": "暂不判定"
+            }
+          ],
+          "code": "hard",
+          "confidence": 0.958927,
+          "display_name": "硬光",
+          "evidence": [
+            {
+              "metric": "subject_dynamic_range",
+              "value": 0.448919
+            },
+            {
+              "metric": "fine_edge_strength",
+              "value": 0.07945
+            },
+            {
+              "metric": "coarse_edge_strength",
+              "value": 0.035783
+            },
+            {
+              "metric": "edge_sharpness",
+              "value": 2.220304
+            },
+            {
+              "metric": "localized_highlight",
+              "value": 0.120872
+            },
+            {
+              "metric": "valid_share",
+              "value": 0.5576
+            }
+          ],
+          "regions": [
+            {
+              "box": [
+                144,
+                120,
+                612,
+                984
+              ],
+              "type": "main_subject"
+            }
+          ]
+        },
+        "ratio": {
+          "alternatives": [
+            {
+              "code": "medium",
+              "confidence": 0.2,
+              "display_name": "中"
+            },
+            {
+              "code": "low",
+              "confidence": 0.0,
+              "display_name": "低"
+            }
+          ],
+          "code": "high",
+          "confidence": 0.99,
+          "display_name": "高",
+          "evidence": [
+            {
+              "metric": "light_level",
+              "value": 0.42217
+            },
+            {
+              "metric": "shadow_level",
+              "value": 0.058186
+            },
+            {
+              "metric": "delta_ev",
+              "value": 2.426402
+            },
+            {
+              "metric": "subject_dynamic_range",
+              "value": 0.363983
+            },
+            {
+              "metric": "spatial_coherence",
+              "value": 0.834969
+            },
+            {
+              "metric": "lit_area_share",
+              "value": 0.35
+            },
+            {
+              "metric": "shadow_area_share",
+              "value": 0.351007
+            },
+            {
+              "metric": "valid_share",
+              "value": 0.5576
+            }
+          ],
+          "regions": [
+            {
+              "box": [
+                144,
+                120,
+                612,
+                984
+              ],
+              "type": "main_subject"
+            }
+          ]
+        },
+        "source": {
+          "alternatives": [
+            {
+              "code": "studio",
+              "confidence": 0.536285,
+              "display_name": "人工棚拍"
+            },
+            {
+              "code": "flash",
+              "confidence": 0.131933,
+              "display_name": "人工闪光"
+            }
+          ],
+          "code": "natural",
+          "confidence": 0.58,
+          "display_name": "自然光",
+          "evidence": [
+            {
+              "metric": "scene_dark_share",
+              "value": 0.427059
+            },
+            {
+              "metric": "scene_highlight_share",
+              "value": 0.0
+            },
+            {
+              "metric": "background_uniformity",
+              "value": 0.0
+            },
+            {
+              "metric": "subject_background_ev",
+              "value": -1.147681
+            },
+            {
+              "metric": "subject_separation",
+              "value": 0.145588
+            },
+            {
+              "metric": "chromatic_spread",
+              "value": 0.075468
+            },
+            {
+              "metric": "environment_texture",
+              "value": 0.003922
+            },
+            {
+              "metric": "bright_component_count",
+              "value": 0
+            },
+            {
+              "metric": "bright_component_share",
+              "value": 0.0
+            }
+          ],
+          "regions": [
+            {
+              "box": [
+                0,
+                0,
+                900,
+                1200
+              ],
+              "type": "scene"
+            },
+            {
+              "box": [
+                144,
+                120,
+                612,
+                984
+              ],
+              "type": "main_subject"
+            }
+          ]
+        }
+      },
+      "color_temperature_role": "auxiliary_only_not_decisive",
+      "quality_features": {
+        "coarse_edge_strength": 0.035783,
+        "edge_sharpness": 2.220304,
+        "fine_edge_strength": 0.07945,
+        "localized_highlight": 0.120872,
+        "subject_dynamic_range": 0.448919,
+        "valid_share": 0.5576
+      },
+      "ratio_features": {
+        "delta_ev": 2.426402,
+        "light_level": 0.42217,
+        "lit_area_share": 0.35,
+        "shadow_area_share": 0.351007,
+        "shadow_level": 0.058186,
+        "spatial_coherence": 0.834969,
+        "subject_dynamic_range": 0.363983,
+        "valid_share": 0.5576
+      },
+      "source_features": {
+        "background_uniformity": 0.0,
+        "bright_component_count": 0,
+        "bright_component_share": 0.0,
+        "chromatic_spread": 0.075468,
+        "color_temperature_proxy": -0.188235,
+        "environment_texture": 0.003922,
+        "scene_dark_share": 0.427059,
+        "scene_highlight_share": 0.0,
+        "subject_background_ev": -1.147681,
+        "subject_separation": 0.145588,
+        "subject_valid_share": 0.5576
+      }
+    },
+    "quality": {
+      "code": "hard",
+      "display_name": "硬光"
+    },
+    "ratio": {
+      "code": "high",
+      "display_name": "高"
+    },
+    "ruleset_version": "lighting-0.14.0",
+    "source": {
+      "code": "natural",
+      "display_name": "自然光"
+    },
+    "subject_roi": {
+      "box": [
+        144,
+        120,
+        612,
+        984
+      ],
+      "type": "main_subject",
+      "valid_share": 0.5576
+    }
+  },
+  "material_effects": {
+    "diagnostics": {
+      "candidate_count": 0,
+      "roi_strategy": {
+        "coarse_grain": [
+          "r5c3",
+          "r5c4",
+          "r3c1",
+          "r3c6",
+          "r4c1",
+          "r4c6",
+          "r2c1",
+          "r2c6"
+        ],
+        "edge": [
+          "r4c4",
+          "r4c1",
+          "r3c4",
+          "r4c2",
+          "r4c3",
+          "r3c1",
+          "r2c3",
+          "r2c2"
+        ],
+        "face": "肤色ROI由独立肤色模块提供；Material FX不以平滑肤色单独判定模糊",
+        "flat": [
+          "r2c1",
+          "r2c4",
+          "r1c1",
+          "r1c4",
+          "r3c2",
+          "r3c3",
+          "r3c1",
+          "r3c4"
+        ],
+        "highlight": "Luma>=235及其邻域"
+      }
+    },
+    "items": [],
+    "ruleset_version": "material-fx-0.13.0",
+    "status": "未发现明显",
+    "summary": "未发现明显素材特效"
+  },
+  "official_language": "zh-CN",
+  "official_report": {
+    "官方模块": [
+      "影调结构",
+      "明暗关系",
+      "色彩浓度",
+      "白平衡&色相",
+      "影调色卡",
+      "肤色锚点",
+      "素材特效&光线构成"
+    ],
+    "官方语言": "中文（zh-CN）",
+    "影调结构": [
+      "中间调结构，画面亮度重心分布均衡。",
+      "黑白两端均未明显碰壁，端部保留柔和余量。"
+    ],
+    "影调色卡": [
+      {
+        "band_share": 0.0,
+        "hex": "#F5F5F5",
+        "lab": {
+          "a": 0.0,
+          "b": 0.0,
+          "l": 96.5
+        },
+        "rgb": [
+          245,
+          245,
+          245
+        ],
+        "role": "深黑",
+        "status": "样本不足"
+      },
+      {
+        "band_share": 0.451976,
+        "hex": "#23485F",
+        "lab": {
+          "a": -5.46,
+          "b": -17.53,
+          "l": 28.95
+        },
+        "rgb": [
+          35,
+          72,
+          95
+        ],
+        "role": "阴影",
+        "status": "有效"
+      },
+      {
+        "band_share": 0.185073,
+        "hex": "#506782",
+        "lab": {
+          "a": -1.28,
+          "b": -17.72,
+          "l": 42.79
+        },
+        "rgb": [
+          80,
+          103,
+          130
+        ],
+        "role": "中间调",
+        "status": "有效"
+      },
+      {
+        "band_share": 0.243868,
+        "hex": "#DEB4A0",
+        "lab": {
+          "a": 12.28,
+          "b": 15.95,
+          "l": 76.5
+        },
+        "rgb": [
+          222,
+          180,
+          160
+        ],
+        "role": "亮部",
+        "status": "有效"
+      },
+      {
+        "band_share": 0.119083,
+        "hex": "#DAD7DE",
+        "lab": {
+          "a": 2.29,
+          "b": -3.07,
+          "l": 86.4
+        },
+        "rgb": [
+          218,
+          215,
+          222
+        ],
+        "role": "高光",
+        "status": "有效"
+      }
+    ],
+    "明暗关系": [
+      "明暗关系中等，对比度中。",
+      "明暗层次清晰，整体反差保持适中。"
+    ],
+    "白平衡&色相": [
+      "白平衡：轻微偏冷蓝。",
+      "综合色相：暗部青蓝，中间调蓝，高光洋红。"
+    ],
+    "素材特效&光线构成": {
+      "光线构成": {
+        "光比": "高",
+        "光源": "自然光",
+        "光质": "硬光"
+      },
+      "素材特效": {
+        "标签": [
+          "未发现明显素材特效"
+        ],
+        "结论": "未发现明显素材特效"
+      }
+    },
+    "肤色锚点": [
+      "未检测到可用于稳定肤色分析的单人脸，样本不足，不输出肤色数值。"
+    ],
+    "色彩浓度": [
+      "色彩饱和度中。",
+      "综合色彩关系自然稳定，主色清晰但不过分浓烈。"
+    ]
+  },
+  "outputs": {
+    "analysis_json": "synthetic_portrait_analysis.json",
+    "color_report_png": "synthetic_portrait_color_report.png",
+    "jpg_generated": false
+  },
+  "quantitative": {
+    "chroma": {
+      "histogram": {
+        "bin_edges": [
+          0.0,
+          2.5,
+          5.0,
+          7.5,
+          10.0,
+          12.5,
+          15.0,
+          17.5,
+          20.0,
+          22.5,
+          25.0,
+          27.5,
+          30.0,
+          32.5,
+          35.0,
+          37.5,
+          40.0,
+          42.5,
+          45.0,
+          47.5,
+          50.0,
+          52.5,
+          55.0,
+          57.5,
+          60.0,
+          62.5,
+          65.0,
+          67.5,
+          70.0,
+          72.5,
+          75.0,
+          77.5,
+          80.0,
+          82.5,
+          85.0,
+          87.5,
+          90.0,
+          92.5,
+          95.0,
+          97.5,
+          100.0,
+          102.5,
+          105.0,
+          107.5,
+          110.0,
+          112.5,
+          115.0,
+          117.5,
+          120.0
+        ],
+        "bins": 48,
+        "normalized": [
+          0.0,
+          0.116237963,
+          0.0638175926,
+          0.0504037037,
+          0.0638824074,
+          0.0722212963,
+          0.0622990741,
+          0.2939287037,
+          0.1947092593,
+          0.0825,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range": [
+          0.0,
+          120.0
+        ]
+      },
+      "percentiles": {
+        "p25": 10.8487,
+        "p50": 18.3604,
+        "p75": 20.1235,
+        "p90": 22.1385
+      },
+      "shares": {
+        "high_chroma_share": 0.0,
+        "low_chroma_share": 0.23045926,
+        "mid_chroma_share": 0.76954074,
+        "overflow_share": 0.0
+      }
+    },
+    "confidence": {
+      "lighting": {
+        "quality": 0.958927,
+        "ratio": 0.99,
+        "source": 0.58
+      },
+      "material_fx": []
+    },
+    "contrast": {
+      "background_local_contrast_median": 0.4485,
+      "global_l_p95_p5": 60.8849,
+      "kernel_px": 27,
+      "local_contrast_median": 0.4397,
+      "local_contrast_p75": 0.4736,
+      "midtone_l_p75_p25": 46.1486,
+      "subject_local_contrast_median": 0.421
+    },
+    "histograms": {
+      "luminance_lstar": {
+        "bin_edges": [
+          0.0,
+          1.5625,
+          3.125,
+          4.6875,
+          6.25,
+          7.8125,
+          9.375,
+          10.9375,
+          12.5,
+          14.0625,
+          15.625,
+          17.1875,
+          18.75,
+          20.3125,
+          21.875,
+          23.4375,
+          25.0,
+          26.5625,
+          28.125,
+          29.6875,
+          31.25,
+          32.8125,
+          34.375,
+          35.9375,
+          37.5,
+          39.0625,
+          40.625,
+          42.1875,
+          43.75,
+          45.3125,
+          46.875,
+          48.4375,
+          50.0,
+          51.5625,
+          53.125,
+          54.6875,
+          56.25,
+          57.8125,
+          59.375,
+          60.9375,
+          62.5,
+          64.0625,
+          65.625,
+          67.1875,
+          68.75,
+          70.3125,
+          71.875,
+          73.4375,
+          75.0,
+          76.5625,
+          78.125,
+          79.6875,
+          81.25,
+          82.8125,
+          84.375,
+          85.9375,
+          87.5,
+          89.0625,
+          90.625,
+          92.1875,
+          93.75,
+          95.3125,
+          96.875,
+          98.4375,
+          100.0
+        ],
+        "bins": 64,
+        "normalized": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0183333333,
+          0.0233333333,
+          0.0175,
+          0.0233333333,
+          0.2320842593,
+          0.0191666667,
+          0.0233333333,
+          0.0191666667,
+          0.0216666667,
+          0.0233333333,
+          0.0216305556,
+          0.0165055556,
+          0.0134435185,
+          0.0153777778,
+          0.0146462963,
+          0.0147046296,
+          0.0114972222,
+          0.0130018519,
+          0.014212963,
+          0.0146666667,
+          0.0159805556,
+          0.0165907407,
+          0.0183981481,
+          0.0118898148,
+          0.011787963,
+          0.0113814815,
+          0.011787963,
+          0.0113814815,
+          0.0113814815,
+          0.011787963,
+          0.0113814815,
+          0.0113814815,
+          0.0113814815,
+          0.0113814815,
+          0.1056638889,
+          0.0126009259,
+          0.0113814815,
+          0.0130074074,
+          0.0113814815,
+          0.011787963,
+          0.0203453704,
+          0.0266666667,
+          0.0258333333,
+          0.0125,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "range": [
+          0.0,
+          100.0
+        ]
+      }
+    },
+    "hue_distribution": {
+      "accent_hue": "蓝紫",
+      "concentration_definition": "dominant_chroma_weighted_share",
+      "dominant_hue": "蓝",
+      "eligible_pixel_count": 831104,
+      "eligible_pixel_share": 0.76954074,
+      "hue_concentration": 0.77812671,
+      "secondary_hue": "橙",
+      "sectors": [
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 30,
+          "index": 0,
+          "label": "红",
+          "start_degree": 0
+        },
+        {
+          "area_share": 0.12198955,
+          "chroma_weighted_share": 0.13322823,
+          "end_degree": 60,
+          "index": 1,
+          "label": "橙",
+          "start_degree": 30
+        },
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 90,
+          "index": 2,
+          "label": "黄",
+          "start_degree": 60
+        },
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 120,
+          "index": 3,
+          "label": "黄绿",
+          "start_degree": 90
+        },
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 150,
+          "index": 4,
+          "label": "绿",
+          "start_degree": 120
+        },
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 180,
+          "index": 5,
+          "label": "青绿",
+          "start_degree": 150
+        },
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 210,
+          "index": 6,
+          "label": "青",
+          "start_degree": 180
+        },
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 240,
+          "index": 7,
+          "label": "蓝青",
+          "start_degree": 210
+        },
+        {
+          "area_share": 0.80772803,
+          "chroma_weighted_share": 0.77812671,
+          "end_degree": 270,
+          "index": 8,
+          "label": "蓝",
+          "start_degree": 240
+        },
+        {
+          "area_share": 0.07028242,
+          "chroma_weighted_share": 0.08864506,
+          "end_degree": 300,
+          "index": 9,
+          "label": "蓝紫",
+          "start_degree": 270
+        },
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 330,
+          "index": 10,
+          "label": "洋红",
+          "start_degree": 300
+        },
+        {
+          "area_share": 0.0,
+          "chroma_weighted_share": 0.0,
+          "end_degree": 360,
+          "index": 11,
+          "label": "红紫",
+          "start_degree": 330
+        }
+      ]
+    },
+    "luminance": {
+      "percentiles": {
+        "p1": 22.8399,
+        "p25": 28.948,
+        "p5": 25.8407,
+        "p50": 45.1319,
+        "p75": 75.0966,
+        "p95": 86.7256,
+        "p99": 89.2567
+      },
+      "shares": {
+        "black_clip_share": 0.0,
+        "highlight_share": 0.00083333,
+        "l_above_90": 0.00083333,
+        "l_above_95": 0.0,
+        "l_above_99": 0.0,
+        "l_below_10": 0.0,
+        "l_below_5": 0.0,
+        "near_black_share": 0.0,
+        "near_white_share": 0.0,
+        "shadow_share": 0.0,
+        "white_clip_share": 0.0
+      }
+    },
+    "measurement_context": {
+      "chroma_model": "CIELAB C*ab",
+      "edit_parameter_inference": false,
+      "input_interpretation": "ICC标准化后的sRGB显示成片",
+      "lightness_model": "CIELAB L*"
+    },
+    "neutral_axis": {
+      "candidate_definition": {
+        "c_max": 8.0,
+        "l_max": 95.0,
+        "l_min": 10.0
+      },
+      "neutral_pixel_share": 0.19103056,
+      "neutral_spatial_coverage": 0.375,
+      "overall": {
+        "a_median": 1.7366,
+        "b_median": -3.9529,
+        "c_median": 4.2752,
+        "sample_count": 206313,
+        "sample_share": 0.19103056,
+        "status": "valid"
+      },
+      "segments": {
+        "highlight": {
+          "a_median": 1.7366,
+          "b_median": -3.9529,
+          "c_median": 4.2752,
+          "sample_count": 206313,
+          "sample_share": 0.19103056,
+          "status": "valid"
+        },
+        "midtone": {
+          "a_median": null,
+          "b_median": null,
+          "c_median": null,
+          "sample_count": 0,
+          "sample_share": 0.0,
+          "status": "insufficient"
+        },
+        "shadow": {
+          "a_median": null,
+          "b_median": null,
+          "c_median": null,
+          "sample_count": 0,
+          "sample_share": 0.0,
+          "status": "insufficient"
+        }
+      }
+    },
+    "palettes": {
+      "neutral_tone_palette": [
+        {
+          "hex": null,
+          "lab": null,
+          "pixel_share": 0.0,
+          "rgb": null,
+          "role": "深黑",
+          "sample_count": 0,
+          "status": "insufficient"
+        },
+        {
+          "hex": null,
+          "lab": null,
+          "pixel_share": 0.0,
+          "rgb": null,
+          "role": "阴影",
+          "sample_count": 0,
+          "status": "insufficient"
+        },
+        {
+          "hex": null,
+          "lab": null,
+          "pixel_share": 0.0,
+          "rgb": null,
+          "role": "中间调",
+          "sample_count": 0,
+          "status": "insufficient"
+        },
+        {
+          "hex": "#B5B9C5",
+          "lab": {
+            "a": 0.8149,
+            "b": -6.5299,
+            "l": 75.1721
+          },
+          "pixel_share": 0.07194722,
+          "rgb": [
+            181,
+            185,
+            197
+          ],
+          "role": "亮部",
+          "sample_count": 77703,
+          "status": "valid"
+        },
+        {
+          "hex": "#D9D6DD",
+          "lab": {
+            "a": 2.1007,
+            "b": -3.0729,
+            "l": 86.0391
+          },
+          "pixel_share": 0.11908333,
+          "rgb": [
+            217,
+            214,
+            221
+          ],
+          "role": "高光",
+          "sample_count": 128610,
+          "status": "valid"
+        }
+      ],
+      "scene_palette": {
+        "clusters": [
+          {
+            "area_share": 0.38041759,
+            "chroma": 20.0386,
+            "hex": "#244662",
+            "hue_angle": 260.7491,
+            "id": "cluster_1",
+            "lab": {
+              "a": -3.2214,
+              "b": -19.778,
+              "l": 28.6219
+            },
+            "rgb": [
+              36,
+              70,
+              98
+            ],
+            "role": "primary",
+            "role_display_name": "主色"
+          },
+          {
+            "area_share": 0.14414722,
+            "chroma": 18.4192,
+            "hex": "#48617C",
+            "hue_angle": 265.1864,
+            "id": "cluster_2",
+            "lab": {
+              "a": -1.5456,
+              "b": -18.3542,
+              "l": 40.2279
+            },
+            "rgb": [
+              72,
+              97,
+              124
+            ],
+            "role": "secondary",
+            "role_display_name": "辅助色"
+          },
+          {
+            "area_share": 0.13849907,
+            "chroma": 13.1435,
+            "hex": "#76869B",
+            "hue_angle": 265.5935,
+            "id": "cluster_3",
+            "lab": {
+              "a": -1.0098,
+              "b": -13.1046,
+              "l": 55.4629
+            },
+            "rgb": [
+              118,
+              134,
+              155
+            ],
+            "role": "other",
+            "role_display_name": "其他"
+          },
+          {
+            "area_share": 0.13412315,
+            "chroma": 3.8552,
+            "hex": "#D6D4DB",
+            "hue_angle": 301.3893,
+            "id": "cluster_4",
+            "lab": {
+              "a": 2.008,
+              "b": -3.291,
+              "l": 85.2523
+            },
+            "rgb": [
+              214,
+              212,
+              219
+            ],
+            "role": "other",
+            "role_display_name": "其他"
+          },
+          {
+            "area_share": 0.10893704,
+            "chroma": 7.9147,
+            "hex": "#A7AEBC",
+            "hue_angle": 272.925,
+            "id": "cluster_5",
+            "lab": {
+              "a": 0.4039,
+              "b": -7.9044,
+              "l": 71.0406
+            },
+            "rgb": [
+              167,
+              174,
+              188
+            ],
+            "role": "other",
+            "role_display_name": "其他"
+          },
+          {
+            "area_share": 0.09387593,
+            "chroma": 20.1235,
+            "hex": "#DEB4A0",
+            "hue_angle": 52.4107,
+            "id": "cluster_6",
+            "lab": {
+              "a": 12.2753,
+              "b": 15.946,
+              "l": 76.5045
+            },
+            "rgb": [
+              222,
+              180,
+              160
+            ],
+            "role": "other",
+            "role_display_name": "其他"
+          }
+        ],
+        "max_samples": 30000,
+        "merge_delta_e00": 4.0,
+        "method": "deterministic_minibatch_kmeans_lab",
+        "roles": {
+          "primary": "cluster_1",
+          "secondary": "cluster_2"
+        },
+        "sample_count": 30000,
+        "seed": 42,
+        "status": "valid"
+      }
+    },
+    "performance": {
+      "analysis_runtime_ms": 914.529,
+      "image_max_side": 1200,
+      "local_contrast_kernel_px": 27,
+      "quantitative_runtime_ms": 256.842,
+      "scene_palette_sample_count": 30000,
+      "valid_pixel_count": 1080000
+    },
+    "subject_background": {
+      "background": {
+        "c_p50": 13.1416,
+        "l_p50": 55.6297,
+        "lab_median": {
+          "a": 0.0966,
+          "b": -13.1068,
+          "l": 55.6297
+        },
+        "sample_count": 389380,
+        "sample_share": 0.36053704
+      },
+      "delta_c": 5.2188,
+      "delta_e00": 18.3974,
+      "delta_l": -18.7441,
+      "roi": {
+        "box": [
+          144,
+          120,
+          612,
+          984
+        ],
+        "type": "main_subject"
+      },
+      "status": "valid",
+      "subject": {
+        "c_p50": 18.3604,
+        "l_p50": 36.8856,
+        "lab_median": {
+          "a": -1.4607,
+          "b": -17.5297,
+          "l": 36.8856
+        },
+        "sample_count": 602208,
+        "sample_share": 0.5576
+      }
+    },
+    "summary_zh": "L* P50 = 45.13，Global Contrast = 60.88 L*，Midtone Contrast = 46.15 L*，C* P50 = 18.36。中间调居中，全局反差适中；综合色度中等，中性色轴为 a* +1.74 / b* -3.95。",
+    "tone_signature": {
+      "black_floor_p1": 22.8399,
+      "highlight_ceiling_p99": 89.2567,
+      "highlight_headroom": 13.2744,
+      "midtone_spread": 46.1486,
+      "shadow_floor_p5": 25.8407,
+      "shoulder_ratio": 0.252,
+      "toe_ratio": 0.0673
+    }
+  },
+  "render_policy": {
+    "generate_jpg": false,
+    "official_report_format": "png",
+    "render_color_adjustment": false,
+    "show_face_boxes": false,
+    "show_landmarks": false,
+    "show_skin_anchor_markers": false,
+    "show_skin_sample_crops": true,
+    "skin_sample_crop_ratio": "1:1"
+  },
+  "ruleset_version": "p1-rules-0.10.0",
+  "saturation": {
+    "description": "综合色彩关系自然稳定，主色清晰但不过分浓烈。",
+    "level": "中",
+    "median": 0.3582,
+    "metric": "HSV_S",
+    "shares": {
+      "high": 0.352918,
+      "low": 0.269888,
+      "mid": 0.377194
+    }
+  },
+  "schema_version": "0.15.0",
+  "skin": {
+    "available_backends": [
+      "opencv"
+    ],
+    "backend_degraded": false,
+    "backend_note": "",
+    "detector": "opencv",
+    "face_count": 0,
+    "primary_anchor": null,
+    "requested_backend": "opencv",
+    "secondary_anchor": null,
+    "status": "无人像"
+  },
+  "source": {
+    "analysis_source": "original",
+    "aspect_ratio": 0.75,
+    "exif_orientation_before": null,
+    "exif_present": false,
+    "filename": "synthetic_portrait.png",
+    "format": "PNG",
+    "has_alpha": false,
+    "height": 1200,
+    "icc_conversion_applied": false,
+    "icc_note": "未嵌入ICC，按sRGB解释",
+    "icc_present": false,
+    "icc_profile_name": null,
+    "icc_profile_sha256": null,
+    "opaque_pixel_share": 1.0,
+    "orientation": "portrait",
+    "orientation_applied": false,
+    "partial_alpha_pixel_share": 0.0,
+    "render_color_adjustment": false,
+    "sha256": "b2f832799674dbef3310dbefdb3f562f0d87a805910202646ae04a6067987f9b",
+    "source_mode": "RGB",
+    "valid_pixel_count": 1080000,
+    "valid_pixel_share": 1.0,
+    "width": 900,
+    "working_space": "sRGB"
+  },
+  "tonal_palette": [
+    {
+      "band_share": 0.0,
+      "hex": "#F5F5F5",
+      "lab": {
+        "a": 0.0,
+        "b": 0.0,
+        "l": 96.5
+      },
+      "rgb": [
+        245,
+        245,
+        245
+      ],
+      "role": "深黑",
+      "status": "样本不足"
+    },
+    {
+      "band_share": 0.451976,
+      "hex": "#23485F",
+      "lab": {
+        "a": -5.46,
+        "b": -17.53,
+        "l": 28.95
+      },
+      "rgb": [
+        35,
+        72,
+        95
+      ],
+      "role": "阴影",
+      "status": "有效"
+    },
+    {
+      "band_share": 0.185073,
+      "hex": "#506782",
+      "lab": {
+        "a": -1.28,
+        "b": -17.72,
+        "l": 42.79
+      },
+      "rgb": [
+        80,
+        103,
+        130
+      ],
+      "role": "中间调",
+      "status": "有效"
+    },
+    {
+      "band_share": 0.243868,
+      "hex": "#DEB4A0",
+      "lab": {
+        "a": 12.28,
+        "b": 15.95,
+        "l": 76.5
+      },
+      "rgb": [
+        222,
+        180,
+        160
+      ],
+      "role": "亮部",
+      "status": "有效"
+    },
+    {
+      "band_share": 0.119083,
+      "hex": "#DAD7DE",
+      "lab": {
+        "a": 2.29,
+        "b": -3.07,
+        "l": 86.4
+      },
+      "rgb": [
+        218,
+        215,
+        222
+      ],
+      "role": "高光",
+      "status": "有效"
+    }
+  ],
+  "tonal_regions": [
+    {
+      "hue": "青蓝",
+      "rgb": [
+        35,
+        72,
+        95
+      ],
+      "role": "暗部"
+    },
+    {
+      "hue": "蓝",
+      "rgb": [
+        103,
+        122,
+        145
+      ],
+      "role": "中间调"
+    },
+    {
+      "hue": "洋红",
+      "rgb": [
+        219,
+        189,
+        200
+      ],
+      "role": "高光"
+    }
+  ],
+  "tone": {
+    "clipping": {
+      "black_class": "无",
+      "black_share": 0.0,
+      "white_class": "无",
+      "white_share": 0.0
+    },
+    "code": "mid_key",
+    "l_percentiles": {
+      "p1": 22.84,
+      "p25": 28.95,
+      "p5": 25.84,
+      "p50": 45.13,
+      "p75": 75.1,
+      "p95": 86.73,
+      "p99": 89.26
+    },
+    "label": "中间调结构",
+    "shares": {
+      "highlights": 0.288158,
+      "midtones": 0.325591,
+      "shadows": 0.386251
+    }
+  },
+  "white_balance": {
+    "a_median": 1.68,
+    "b_median": -3.95,
+    "judgement": "轻微偏冷蓝",
+    "neutral_share": 0.190197,
+    "neutral_spatial_coverage": 0.375,
+    "status": "有效"
+  },
+  "zero_token": true
+}

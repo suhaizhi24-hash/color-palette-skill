@@ -16,7 +16,7 @@ except ModuleNotFoundError:  # 允许以 python tools/build_codex_kit.py 直接�
 
 
 ROOT = Path(__file__).resolve().parents[1]
-KIT_VERSION = "0.14.1"
+KIT_VERSION = "0.15.0"
 KIT_ROOT_NAME = f"color-palette-codex-kit-v{KIT_VERSION}"
 WHEEL_NAME = f"color_palette_skill-{KIT_VERSION}-py3-none-any.whl"
 KIT_NAME = f"color-palette-codex-kit-v{KIT_VERSION}.zip"
@@ -160,7 +160,7 @@ def build_codex_kit(
 
 def main(argv: list[str] | None = None) -> int:
     parser = ChineseArgumentParser(description="构建固定结构、可审计的Codex快速体验包。")
-    parser.add_argument("wheel", help="0.14.1 Wheel文件，或只包含该Wheel的目录")
+    parser.add_argument("wheel", help="0.15.0 Wheel文件，或只包含该Wheel的目录")
     parser.add_argument(
         "--output",
         default=str(ROOT / "dist" / KIT_NAME),

@@ -41,6 +41,10 @@ def test_official_modules_and_policy(gradient_jpg, tmp_path):
     data = json.loads(outputs["analysis_json"].read_text(encoding="utf-8"))
     assert data["official_language"] == "zh-CN"
     assert data["zero_token"] is True
+    assert data["schema_version"] == "0.15.0"
+    assert "quantitative" in data
+    assert "color_dna" in data
+    assert data["quantitative"]["measurement_context"]["edit_parameter_inference"] is False
     assert data["render_policy"]["official_report_format"] == "png"
     assert data["render_policy"]["generate_jpg"] is False
     assert data["official_report"]["官方模块"] == [

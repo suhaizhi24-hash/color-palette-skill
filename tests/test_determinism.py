@@ -10,4 +10,6 @@ def test_analysis_is_deterministic(gradient_jpg, tmp_path):
     b = json.loads(second["analysis_json"].read_text(encoding="utf-8"))
     a.pop("outputs", None)
     b.pop("outputs", None)
+    a["quantitative"].pop("performance", None)
+    b["quantitative"].pop("performance", None)
     assert a == b

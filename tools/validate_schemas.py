@@ -11,7 +11,7 @@ from color_palette.argparse_zh import ChineseArgumentParser
 VALIDATION_TARGETS = (
     (
         "schemas/analysis.schema.json",
-        "examples/output_v014/synthetic_portrait_analysis.json",
+        "examples/output_v015/synthetic_portrait_analysis.json",
     ),
     (
         "schemas/ground_truth.schema.json",
