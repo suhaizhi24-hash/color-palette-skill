@@ -32,7 +32,7 @@ def _write_manifest(
     _write_json(
         root / "examples" / "public_examples_manifest.json",
         {
-            "version": "0.14.0",
+            "version": "0.15.0",
             "privacy": "公开",
             "license": "CC0-1.0",
             "origin": "程序生成，无真人、无私人素材、无外部版权依赖",
@@ -46,7 +46,7 @@ def _write_manifest(
         _write_json(
             root / "examples" / "public_examples_provenance.json",
             {
-                "version": "0.14.0",
+                "version": "0.15.0",
                 "privacy": "公开",
                 "license": "CC0-1.0",
                 "review_policy": "人工审核固定来源",
@@ -210,7 +210,7 @@ def test_lighting_benchmark_rejects_embedded_private_asset_path(tmp_path: Path):
     _write_json(
         tmp_path / "tests" / "lighting" / "lighting_benchmark.json",
         {
-            "schema_version": "0.14.0",
+            "schema_version": "0.15.0",
             "dataset": {"privacy": "外部本地测试，不进入公开仓库"},
             "anchors": anchors,
         },
@@ -264,7 +264,7 @@ def test_valid_ground_truth_references_manifest_image(tmp_path: Path):
 def test_public_analysis_requires_manifest_image_reference(tmp_path: Path):
     _write_manifest(tmp_path)
     _write_json(
-        tmp_path / "examples" / "output_v014" / "synthetic_portrait_analysis.json",
+        tmp_path / "examples" / "output_v015" / "synthetic_portrait_analysis.json",
         {
             "source": {
                 "filename": "customer.png",

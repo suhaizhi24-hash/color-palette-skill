@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Color Palette Analysis 0.14.0",
+  "title": "Color Palette Analysis 0.15.0",
   "type": "object",
   "required": [
     "schema_version",
@@ -23,7 +23,7 @@
     "render_policy"
   ],
   "properties": {
-    "schema_version": {"const": "0.14.0"},
+    "schema_version": {"const": "0.15.0"},
     "ruleset_version": {"const": "p1-rules-0.10.0"},
     "official_language": {"const": "zh-CN"},
     "zero_token": {"const": true},
@@ -214,6 +214,8 @@
       "type": "object",
       "required": ["detected", "not_obvious", "conclusion", "status"]
     },
+    "quantitative": {"$ref": "#/$defs/quantitative"},
+    "color_dna": {"$ref": "#/$defs/colorDna"},
     "render_policy": {
       "type": "object",
       "required": ["official_report_format", "generate_jpg", "render_color_adjustment"],
@@ -299,6 +301,422 @@
     }
   },
   "$defs": {
+    "share": {"type": "number", "minimum": 0, "maximum": 1},
+    "lstar": {"type": "number", "minimum": 0, "maximum": 100},
+    "hueAngle": {"type": "number", "minimum": 0, "exclusiveMaximum": 360},
+    "nullableNumber": {"type": ["number", "null"]},
+    "nullableShare": {
+      "anyOf": [
+        {"$ref": "#/$defs/share"},
+        {"type": "null"}
+      ]
+    },
+    "lab": {
+      "type": "object",
+      "required": ["l", "a", "b"],
+      "properties": {
+        "l": {"$ref": "#/$defs/lstar"},
+        "a": {"type": "number", "minimum": -160, "maximum": 160},
+        "b": {"type": "number", "minimum": -160, "maximum": 160}
+      },
+      "additionalProperties": false
+    },
+    "rgb": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"type": "integer", "minimum": 0, "maximum": 255}
+    },
+    "luminancePercentiles": {
+      "type": "object",
+      "required": ["p1", "p5", "p25", "p50", "p75", "p95", "p99"],
+      "properties": {
+        "p1": {"$ref": "#/$defs/lstar"},
+        "p5": {"$ref": "#/$defs/lstar"},
+        "p25": {"$ref": "#/$defs/lstar"},
+        "p50": {"$ref": "#/$defs/lstar"},
+        "p75": {"$ref": "#/$defs/lstar"},
+        "p95": {"$ref": "#/$defs/lstar"},
+        "p99": {"$ref": "#/$defs/lstar"}
+      },
+      "additionalProperties": false
+    },
+    "histogram": {
+      "type": "object",
+      "required": ["range", "bins", "bin_edges", "normalized"],
+      "properties": {
+        "range": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"type": "number"}
+        },
+        "bins": {"type": "integer", "minimum": 1},
+        "bin_edges": {"type": "array", "items": {"type": "number"}},
+        "normalized": {"type": "array", "items": {"$ref": "#/$defs/share"}}
+      },
+      "additionalProperties": false
+    },
+    "axisSegment": {
+      "type": "object",
+      "required": ["status", "sample_share", "sample_count", "a_median", "b_median", "c_median"],
+      "properties": {
+        "status": {"enum": ["valid", "insufficient"]},
+        "sample_share": {"$ref": "#/$defs/share"},
+        "sample_count": {"type": "integer", "minimum": 0},
+        "a_median": {"$ref": "#/$defs/nullableNumber"},
+        "b_median": {"$ref": "#/$defs/nullableNumber"},
+        "c_median": {"$ref": "#/$defs/nullableNumber"}
+      },
+      "additionalProperties": false
+    },
+    "neutralPaletteItem": {
+      "type": "object",
+      "required": ["role", "status", "pixel_share", "sample_count", "rgb", "hex", "lab"],
+      "properties": {
+        "role": {"enum": ["深黑", "阴影", "中间调", "亮部", "高光"]},
+        "status": {"enum": ["valid", "insufficient"]},
+        "pixel_share": {"$ref": "#/$defs/share"},
+        "sample_count": {"type": "integer", "minimum": 0},
+        "rgb": {"anyOf": [{"$ref": "#/$defs/rgb"}, {"type": "null"}]},
+        "hex": {"type": ["string", "null"], "pattern": "^#[0-9A-F]{6}$"},
+        "lab": {"anyOf": [{"$ref": "#/$defs/lab"}, {"type": "null"}]}
+      },
+      "additionalProperties": false
+    },
+    "scenePaletteCluster": {
+      "type": "object",
+      "required": ["id", "role", "role_display_name", "area_share", "lab", "rgb", "hex", "chroma", "hue_angle"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^cluster_[1-9][0-9]*$"},
+        "role": {"enum": ["primary", "secondary", "accent", "other"]},
+        "role_display_name": {"enum": ["主色", "辅助色", "点缀色", "其他"]},
+        "area_share": {"$ref": "#/$defs/share"},
+        "lab": {"$ref": "#/$defs/lab"},
+        "rgb": {"$ref": "#/$defs/rgb"},
+        "hex": {"type": "string", "pattern": "^#[0-9A-F]{6}$"},
+        "chroma": {"type": "number", "minimum": 0},
+        "hue_angle": {"$ref": "#/$defs/hueAngle"}
+      },
+      "additionalProperties": false
+    },
+    "regionStats": {
+      "type": "object",
+      "required": ["sample_count", "sample_share", "l_p50", "lab_median", "c_p50"],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 0},
+        "sample_share": {"$ref": "#/$defs/share"},
+        "l_p50": {"$ref": "#/$defs/lstar"},
+        "lab_median": {"$ref": "#/$defs/lab"},
+        "c_p50": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "quantitative": {
+      "type": "object",
+      "required": [
+        "measurement_context",
+        "luminance",
+        "histograms",
+        "contrast",
+        "tone_signature",
+        "chroma",
+        "hue_distribution",
+        "neutral_axis",
+        "palettes",
+        "subject_background",
+        "confidence",
+        "summary_zh",
+        "performance"
+      ],
+      "properties": {
+        "measurement_context": {
+          "type": "object",
+          "required": ["input_interpretation", "lightness_model", "chroma_model", "edit_parameter_inference"],
+          "properties": {
+            "input_interpretation": {"const": "ICC标准化后的sRGB显示成片"},
+            "lightness_model": {"const": "CIELAB L*"},
+            "chroma_model": {"const": "CIELAB C*ab"},
+            "edit_parameter_inference": {"const": false}
+          },
+          "additionalProperties": false
+        },
+        "luminance": {
+          "type": "object",
+          "required": ["percentiles", "shares"],
+          "properties": {
+            "percentiles": {"$ref": "#/$defs/luminancePercentiles"},
+            "shares": {
+              "type": "object",
+              "required": [
+                "l_below_5", "l_below_10", "l_above_90", "l_above_95", "l_above_99",
+                "near_black_share", "shadow_share", "highlight_share", "near_white_share",
+                "black_clip_share", "white_clip_share"
+              ],
+              "additionalProperties": {"$ref": "#/$defs/share"}
+            }
+          },
+          "additionalProperties": false
+        },
+        "histograms": {
+          "type": "object",
+          "required": ["luminance_lstar"],
+          "properties": {"luminance_lstar": {"$ref": "#/$defs/histogram"}},
+          "additionalProperties": false
+        },
+        "contrast": {
+          "type": "object",
+          "required": [
+            "global_l_p95_p5", "midtone_l_p75_p25", "kernel_px",
+            "local_contrast_median", "local_contrast_p75",
+            "subject_local_contrast_median", "background_local_contrast_median"
+          ],
+          "properties": {
+            "global_l_p95_p5": {"type": "number", "minimum": 0, "maximum": 100},
+            "midtone_l_p75_p25": {"type": "number", "minimum": 0, "maximum": 100},
+            "kernel_px": {"type": "integer", "minimum": 15, "maximum": 61},
+            "local_contrast_median": {"$ref": "#/$defs/nullableNumber"},
+            "local_contrast_p75": {"$ref": "#/$defs/nullableNumber"},
+            "subject_local_contrast_median": {"$ref": "#/$defs/nullableNumber"},
+            "background_local_contrast_median": {"$ref": "#/$defs/nullableNumber"}
+          },
+          "additionalProperties": false
+        },
+        "tone_signature": {
+          "type": "object",
+          "required": [
+            "black_floor_p1", "shadow_floor_p5", "highlight_ceiling_p99",
+            "highlight_headroom", "midtone_spread", "toe_ratio", "shoulder_ratio"
+          ],
+          "properties": {
+            "black_floor_p1": {"$ref": "#/$defs/lstar"},
+            "shadow_floor_p5": {"$ref": "#/$defs/lstar"},
+            "highlight_ceiling_p99": {"$ref": "#/$defs/lstar"},
+            "highlight_headroom": {"$ref": "#/$defs/lstar"},
+            "midtone_spread": {"type": "number", "minimum": 0, "maximum": 100},
+            "toe_ratio": {"type": "number", "minimum": 0},
+            "shoulder_ratio": {"type": "number", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "chroma": {
+          "type": "object",
+          "required": ["percentiles", "shares", "histogram"],
+          "properties": {
+            "percentiles": {
+              "type": "object",
+              "required": ["p25", "p50", "p75", "p90"],
+              "properties": {
+                "p25": {"type": "number", "minimum": 0},
+                "p50": {"type": "number", "minimum": 0},
+                "p75": {"type": "number", "minimum": 0},
+                "p90": {"type": "number", "minimum": 0}
+              },
+              "additionalProperties": false
+            },
+            "shares": {
+              "type": "object",
+              "required": ["low_chroma_share", "mid_chroma_share", "high_chroma_share", "overflow_share"],
+              "additionalProperties": {"$ref": "#/$defs/share"}
+            },
+            "histogram": {"$ref": "#/$defs/histogram"}
+          },
+          "additionalProperties": false
+        },
+        "hue_distribution": {
+          "type": "object",
+          "required": [
+            "eligible_pixel_share", "eligible_pixel_count", "dominant_hue", "secondary_hue",
+            "accent_hue", "hue_concentration", "concentration_definition", "sectors"
+          ],
+          "properties": {
+            "eligible_pixel_share": {"$ref": "#/$defs/share"},
+            "eligible_pixel_count": {"type": "integer", "minimum": 0},
+            "dominant_hue": {"type": ["string", "null"]},
+            "secondary_hue": {"type": ["string", "null"]},
+            "accent_hue": {"type": ["string", "null"]},
+            "hue_concentration": {"$ref": "#/$defs/share"},
+            "concentration_definition": {"const": "dominant_chroma_weighted_share"},
+            "sectors": {
+              "type": "array",
+              "minItems": 12,
+              "maxItems": 12,
+              "items": {
+                "type": "object",
+                "required": ["index", "label", "start_degree", "end_degree", "area_share", "chroma_weighted_share"],
+                "properties": {
+                  "index": {"type": "integer", "minimum": 0, "maximum": 11},
+                  "label": {"enum": ["红", "橙", "黄", "黄绿", "绿", "青绿", "青", "蓝青", "蓝", "蓝紫", "洋红", "红紫"]},
+                  "start_degree": {"type": "integer", "minimum": 0, "maximum": 330},
+                  "end_degree": {"type": "integer", "minimum": 30, "maximum": 360},
+                  "area_share": {"$ref": "#/$defs/share"},
+                  "chroma_weighted_share": {"$ref": "#/$defs/share"}
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "neutral_axis": {
+          "type": "object",
+          "required": ["candidate_definition", "neutral_pixel_share", "neutral_spatial_coverage", "overall", "segments"],
+          "properties": {
+            "candidate_definition": {
+              "type": "object",
+              "required": ["c_max", "l_min", "l_max"],
+              "properties": {
+                "c_max": {"const": 8.0},
+                "l_min": {"const": 10.0},
+                "l_max": {"const": 95.0}
+              },
+              "additionalProperties": false
+            },
+            "neutral_pixel_share": {"$ref": "#/$defs/share"},
+            "neutral_spatial_coverage": {"$ref": "#/$defs/share"},
+            "overall": {"$ref": "#/$defs/axisSegment"},
+            "segments": {
+              "type": "object",
+              "required": ["shadow", "midtone", "highlight"],
+              "properties": {
+                "shadow": {"$ref": "#/$defs/axisSegment"},
+                "midtone": {"$ref": "#/$defs/axisSegment"},
+                "highlight": {"$ref": "#/$defs/axisSegment"}
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "palettes": {
+          "type": "object",
+          "required": ["neutral_tone_palette", "scene_palette"],
+          "properties": {
+            "neutral_tone_palette": {
+              "type": "array",
+              "minItems": 5,
+              "maxItems": 5,
+              "items": {"$ref": "#/$defs/neutralPaletteItem"}
+            },
+            "scene_palette": {
+              "type": "object",
+              "required": ["status", "sample_count", "clusters"],
+              "properties": {
+                "status": {"enum": ["valid", "insufficient"]},
+                "method": {"type": "string"},
+                "seed": {"type": "integer"},
+                "max_samples": {"type": "integer", "minimum": 1},
+                "sample_count": {"type": "integer", "minimum": 0},
+                "merge_delta_e00": {"type": "number", "minimum": 0},
+                "clusters": {"type": "array", "items": {"$ref": "#/$defs/scenePaletteCluster"}},
+                "roles": {
+                  "type": "object",
+                  "propertyNames": {"enum": ["primary", "secondary", "accent"]},
+                  "additionalProperties": {"type": "string", "pattern": "^cluster_[1-9][0-9]*$"}
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "subject_background": {
+          "type": "object",
+          "required": ["status", "roi", "subject", "background", "delta_l", "delta_c", "delta_e00"],
+          "properties": {
+            "status": {"enum": ["valid", "insufficient"]},
+            "roi": {
+              "type": "object",
+              "required": ["type", "box"],
+              "properties": {
+                "type": {"enum": ["face", "upper_body", "full_body", "main_subject"]},
+                "box": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0}}
+              },
+              "additionalProperties": false
+            },
+            "subject": {"anyOf": [{"$ref": "#/$defs/regionStats"}, {"type": "null"}]},
+            "background": {"anyOf": [{"$ref": "#/$defs/regionStats"}, {"type": "null"}]},
+            "delta_l": {"$ref": "#/$defs/nullableNumber"},
+            "delta_c": {"$ref": "#/$defs/nullableNumber"},
+            "delta_e00": {"$ref": "#/$defs/nullableNumber"}
+          },
+          "additionalProperties": false
+        },
+        "confidence": {
+          "type": "object",
+          "required": ["lighting", "material_fx"],
+          "properties": {
+            "lighting": {
+              "type": "object",
+              "required": ["source", "quality", "ratio"],
+              "properties": {
+                "source": {"$ref": "#/$defs/nullableShare"},
+                "quality": {"$ref": "#/$defs/nullableShare"},
+                "ratio": {"$ref": "#/$defs/nullableShare"}
+              },
+              "additionalProperties": false
+            },
+            "material_fx": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "confidence"],
+                "properties": {
+                  "name": {"type": "string"},
+                  "confidence": {"$ref": "#/$defs/nullableShare"}
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "summary_zh": {"type": "string", "minLength": 1},
+        "performance": {
+          "type": "object",
+          "required": ["analysis_runtime_ms", "quantitative_runtime_ms", "image_max_side", "valid_pixel_count", "scene_palette_sample_count", "local_contrast_kernel_px"],
+          "properties": {
+            "analysis_runtime_ms": {"type": "number", "minimum": 0},
+            "quantitative_runtime_ms": {"type": "number", "minimum": 0},
+            "image_max_side": {"type": "integer", "minimum": 1},
+            "valid_pixel_count": {"type": "integer", "minimum": 100},
+            "scene_palette_sample_count": {"type": "integer", "minimum": 0},
+            "local_contrast_kernel_px": {"type": "integer", "minimum": 15, "maximum": 61}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "colorDna": {
+      "type": "object",
+      "required": [
+        "L50", "L95_minus_L5", "L75_minus_L25", "black_floor_p1", "highlight_headroom",
+        "C50", "C90", "neutral_a", "neutral_b", "neutral_share", "neutral_coverage",
+        "toe_ratio", "shoulder_ratio", "subject_background_delta_l", "subject_background_delta_e00",
+        "lighting_confidence", "material_fx_confidence_max"
+      ],
+      "properties": {
+        "L50": {"$ref": "#/$defs/lstar"},
+        "L95_minus_L5": {"type": "number", "minimum": 0, "maximum": 100},
+        "L75_minus_L25": {"type": "number", "minimum": 0, "maximum": 100},
+        "black_floor_p1": {"$ref": "#/$defs/lstar"},
+        "highlight_headroom": {"$ref": "#/$defs/lstar"},
+        "C50": {"type": "number", "minimum": 0},
+        "C90": {"type": "number", "minimum": 0},
+        "neutral_a": {"$ref": "#/$defs/nullableNumber"},
+        "neutral_b": {"$ref": "#/$defs/nullableNumber"},
+        "neutral_share": {"$ref": "#/$defs/share"},
+        "neutral_coverage": {"$ref": "#/$defs/share"},
+        "toe_ratio": {"type": "number", "minimum": 0},
+        "shoulder_ratio": {"type": "number", "minimum": 0},
+        "subject_background_delta_l": {"$ref": "#/$defs/nullableNumber"},
+        "subject_background_delta_e00": {"$ref": "#/$defs/nullableNumber"},
+        "lighting_confidence": {"$ref": "#/$defs/nullableShare"},
+        "material_fx_confidence_max": {"$ref": "#/$defs/nullableShare"}
+      },
+      "additionalProperties": false
+    },
     "materialEffectItem": {
       "type": "object",
       "required": [

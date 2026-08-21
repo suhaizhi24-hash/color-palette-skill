@@ -73,7 +73,7 @@ jobs:
           major,minor=map(int,cv2.__version__.split('.')[:2]);
           print('OpenCV', cv2.__version__);
           assert major == 4 and minor >= 14,
-          f'V0.14.x要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
+          f'V0.15.x要求OpenCV >=4.14,<5，实际为{cv2.__version__}'"
 
       - name: 校验 Lighting A-F Benchmark 登记
         run: >-
@@ -82,6 +82,9 @@ jobs:
 
       - name: 运行完整测试
         run: python -m pytest -q
+
+      - name: 运行 Quantitative Color 定向回归
+        run: python -m pytest -q tests/quantitative
 
       - name: 再次执行隐私扫描
         run: python tools/privacy_scan.py . --output privacy_scan_release.json
@@ -128,19 +131,19 @@ jobs:
       - name: 审计 Wheel
         run: >-
           python tools/audit_wheel.py dist
-          --expected-version 0.14.1
+          --expected-version 0.15.0
           --output wheel_audit_release.json
 
       - name: 构建 Codex 快速体验包
         run: >-
           python tools/build_codex_kit.py dist
-          --output dist/color-palette-codex-kit-v0.14.1.zip
+          --output dist/color-palette-codex-kit-v0.15.0.zip
           --result codex_kit_build_release.json
 
       - name: 验证 Codex Kit 干净安装与跨路径
         run: >-
           python tools/verify_codex_kit.py
-          dist/color-palette-codex-kit-v0.14.1.zip
+          dist/color-palette-codex-kit-v0.15.0.zip
           --schema schemas/analysis.schema.json
           --result codex_kit_smoke_release.json
 
@@ -178,10 +181,10 @@ jobs:
       - name: 上传已验证的发布候选 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: color-palette-skill-v0.14.1-${{ github.sha }}
+          name: color-palette-skill-v0.15.0-${{ github.sha }}
           path: |
             dist/*.whl
-            dist/color-palette-codex-kit-v0.14.1.zip
+            dist/color-palette-codex-kit-v0.15.0.zip
             dist/SHA256SUMS.txt
             dist/SOURCE_COMMIT.txt
             privacy_scan_release.json
