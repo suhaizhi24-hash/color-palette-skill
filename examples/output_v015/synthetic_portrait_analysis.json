@@ -19,8 +19,8 @@
     "neutral_coverage": 0.375,
     "neutral_share": 0.19103056,
     "shoulder_ratio": 0.252,
-    "subject_background_delta_e00": 18.3974,
-    "subject_background_delta_l": -18.7441,
+    "subject_background_delta_e00": 25.1534,
+    "subject_background_delta_l": -26.6817,
     "toe_ratio": 0.0673
   },
   "contrast": {
@@ -613,7 +613,7 @@
       "local_contrast_median": 0.4397,
       "local_contrast_p75": 0.4736,
       "midtone_l_p75_p25": 46.1486,
-      "subject_local_contrast_median": 0.421
+      "subject_local_contrast_median": 0.0
     },
     "histograms": {
       "luminance_lstar": {
@@ -895,12 +895,18 @@
       "lightness_model": "CIELAB L*"
     },
     "neutral_axis": {
+      "background_neutral_share": 0.33885151,
       "candidate_definition": {
         "c_max": 8.0,
         "l_max": 95.0,
         "l_min": 10.0
       },
+      "neutral_a_mad": 0.5335,
+      "neutral_active_tile_count": 6,
+      "neutral_b_mad": 1.5007,
+      "neutral_confidence": 0.700176,
       "neutral_pixel_share": 0.19103056,
+      "neutral_spatial_concentration": 0.32230155,
       "neutral_spatial_coverage": 0.375,
       "overall": {
         "a_median": 1.7366,
@@ -935,7 +941,9 @@
           "sample_share": 0.0,
           "status": "insufficient"
         }
-      }
+      },
+      "subject_neutral_share": 0.00439596,
+      "validity_reason": "multi_evidence_valid"
     },
     "palettes": {
       "neutral_tone_palette": [
@@ -1131,10 +1139,10 @@
       }
     },
     "performance": {
-      "analysis_runtime_ms": 914.529,
+      "analysis_runtime_ms": 1088.698,
       "image_max_side": 1200,
       "local_contrast_kernel_px": 27,
-      "quantitative_runtime_ms": 256.842,
+      "quantitative_runtime_ms": 451.767,
       "scene_palette_sample_count": 30000,
       "valid_pixel_count": 1080000
     },
@@ -1151,8 +1159,8 @@
         "sample_share": 0.36053704
       },
       "delta_c": 5.2188,
-      "delta_e00": 18.3974,
-      "delta_l": -18.7441,
+      "delta_e00": 25.1534,
+      "delta_l": -26.6817,
       "roi": {
         "box": [
           144,
@@ -1160,22 +1168,25 @@
           612,
           984
         ],
+        "mask_method": "main_subject_grabcut",
+        "pixel_share": 0.30583611,
+        "region_pixel_share": 0.54848657,
         "type": "main_subject"
       },
       "status": "valid",
       "subject": {
         "c_p50": 18.3604,
-        "l_p50": 36.8856,
+        "l_p50": 28.948,
         "lab_median": {
-          "a": -1.4607,
+          "a": -5.4604,
           "b": -17.5297,
-          "l": 36.8856
+          "l": 28.948
         },
-        "sample_count": 602208,
-        "sample_share": 0.5576
+        "sample_count": 330303,
+        "sample_share": 0.30583611
       }
     },
-    "summary_zh": "L* P50 = 45.13，Global Contrast = 60.88 L*，Midtone Contrast = 46.15 L*，C* P50 = 18.36。中间调居中，全局反差适中；综合色度中等，中性色轴为 a* +1.74 / b* -3.95。",
+    "summary_zh": "全局 L* P50 = 45.13，Global Contrast = 60.88 L*，Midtone Contrast = 46.15 L*，C* P50 = 18.36。全局画面像素中位明度居中，全局反差适中；综合色度中等，中性色轴为 a* +1.74 / b* -3.95。",
     "tone_signature": {
       "black_floor_p1": 22.8399,
       "highlight_ceiling_p99": 89.2567,
@@ -1183,7 +1194,9 @@
       "midtone_spread": 46.1486,
       "shadow_floor_p5": 25.8407,
       "shoulder_ratio": 0.252,
-      "toe_ratio": 0.0673
+      "shoulder_state": "compressed",
+      "toe_ratio": 0.0673,
+      "toe_state": "compressed"
     }
   },
   "render_policy": {

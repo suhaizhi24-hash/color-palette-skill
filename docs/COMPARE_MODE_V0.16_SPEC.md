@@ -8,12 +8,12 @@
 
 ## 指标
 
-- L50；
+- 全局 L50（另列可信 ROI 的主体 L50 / 背景 L50）；
 - Global Contrast；
 - Midtone Contrast；
 - C50 / C90；
 - Overall / Shadow / Midtone / Highlight Neutral a*/b*；
-- Toe Ratio / Shoulder Ratio；
+- Toe Span Ratio / Shoulder Span Ratio；
 - Subject/BG ΔL / ΔE00。
 
 ## Delta

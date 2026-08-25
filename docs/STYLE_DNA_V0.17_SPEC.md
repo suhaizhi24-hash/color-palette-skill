@@ -18,12 +18,12 @@ references
 
 ## 汇总字段
 
-- L50 Median / IQR；
+- 全局 L50 Median / IQR；
 - Global Contrast Median / IQR；
 - Midtone Contrast Median / IQR；
 - C50 / C90 Median / IQR；
 - Neutral Axis Median / IQR；
-- Toe / Shoulder Median / IQR；
+- Toe / Shoulder Span Ratio Median / IQR；
 - Hue Distribution；
 - Scene Palette Distribution；
 - Subject/BG 分离分布。

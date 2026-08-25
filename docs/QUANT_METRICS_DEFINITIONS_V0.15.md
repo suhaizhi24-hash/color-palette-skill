@@ -36,8 +36,14 @@ Local Contrast 描述局部 L* 波动，不等同于 Clarity、Texture 或锐化
 - `highlight_ceiling_p99 = P99`
 - `highlight_headroom = 100 - P95`
 - `midtone_spread = P75 - P25`
-- `toe_ratio = (P25 - P5) / max(P75 - P25, 1e-6)`
-- `shoulder_ratio = (P95 - P75) / max(P75 - P25, 1e-6)`
+- Toe Span Ratio / 暗部跨度比：`toe_ratio = (P25 - P5) / max(P75 - P25, 1e-6)`
+- Shoulder Span Ratio / 高光跨度比：`shoulder_ratio = (P95 - P75) / max(P75 - P25, 1e-6)`
+
+这两个 ratio 表示相对于中间调的“跨度”，不是压缩程度。派生状态的集中阈值为：
+
+- ratio < 0.8：`compressed`，跨度收窄；
+- 0.8 <= ratio <= 1.2：`neutral`，接近中间调跨度；
+- ratio > 1.2：`expanded`，跨度展开。
 
 这些值描述观察到的成片影调分布，不恢复原始 Tone Curve 或调整滑块。
 
@@ -63,7 +69,7 @@ Chroma Histogram 固定为 `[0, 120]`、48 bins；`overflow_share` 单独记录 
 
 ## Neutral Axis
 
-候选像素固定为 `C* <= 8` 且 `10 <= L* <= 95`。空间覆盖使用 4×4 grid：有效像素不少于 32 且 neutral share 至少 1% 的格子视为覆盖。
+候选像素固定为 `C* <= 8` 且 `10 <= L* <= 95`。空间覆盖使用 4×4 grid：有效像素不少于 32 且 neutral share 至少 1% 的格子视为覆盖。Neutral Confidence 同时结合全局占比、空间覆盖、主体/背景占比、三个明度分段样本、单区域集中度与 a*/b* 离散度，输出 `valid` / `low_confidence` / `insufficient`。不以单一 5% 阈值决定状态。
 
 分段：
 
@@ -87,7 +93,11 @@ Scene Palette 只说明物体颜色结构，不参与 Neutral Axis 或白平衡�
 
 ## Subject / Background
 
-ROI 顺序复用现有 `face → upper_body → full_body → main_subject`。背景从有效像素中排除主体及短边约 3% 的安全 margin。
+ROI 顺序复用现有 `face → upper_body → full_body → main_subject`。对 `face` 定量 ROI，在内缩椭圆脸部核心上与保守肤色候选 mask 取交集，排除头发、眼睛、嘴唇和非肤色区域；样本不足时返回 `insufficient`，不回退到完整脸部矩形。背景从有效像素中排除原主体区域及短边约 3% 的安全 margin。
+
+- 全局 L50：全局画面有效像素的 L* 中位数，不是主体曝光；
+- 主体 L50：可信主体 ROI 像素的 L* 中位数；
+- 背景 L50：排除主体与安全 margin 后的背景 L* 中位数。
 
 - `delta_l = Subject L50 - Background L50`
 - `delta_c = Subject C50 - Background C50`
@@ -101,7 +111,7 @@ Color DNA 是已定义指标的紧凑映射，不含 0–100 审美分数。
 
 | 字段 | 定义 |
 |---|---|
-| L50 | L* P50 |
+| L50 | 全局画面 L* P50（不是主体曝光） |
 | L95_minus_L5 | Global Contrast |
 | L75_minus_L25 | Midtone Contrast |
 | black_floor_p1 | L* P1 |
@@ -109,7 +119,7 @@ Color DNA 是已定义指标的紧凑映射，不含 0–100 审美分数。
 | C50 / C90 | C*ab P50 / P90 |
 | neutral_a / neutral_b | Overall neutral a*/b* median |
 | neutral_share / neutral_coverage | neutral pixel share / 4×4 spatial coverage |
-| toe_ratio / shoulder_ratio | Observed Tone Signature 对应公式 |
+| toe_ratio / shoulder_ratio | Observed Tone Signature 的 Toe / Shoulder Span Ratio |
 | subject_background_delta_l | Subject L50 - Background L50 |
 | subject_background_delta_e00 | 主体与背景 Lab median 的 CIEDE2000 |
 | lighting_confidence | source / quality / ratio 三项已有 confidence 的最小值 |

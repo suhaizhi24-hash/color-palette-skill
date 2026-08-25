@@ -5,7 +5,12 @@ from copy import deepcopy
 import numpy as np
 
 from color_palette.lighting import SubjectRegion
-from color_palette.quantitative import analyze_quantitative
+from color_palette.quantitative import (
+    TONE_SPAN_NEUTRAL_MAX,
+    TONE_SPAN_NEUTRAL_MIN,
+    _tone_span_state,
+    analyze_quantitative,
+)
 
 
 def _result(
@@ -13,9 +18,15 @@ def _result(
     *,
     subject_box: tuple[int, int, int, int] | None = None,
     valid_mask: np.ndarray | None = None,
+    rgb: np.ndarray | None = None,
+    subject_kind: str = "main_subject",
 ):
     height, width = lab.shape[:2]
-    rgb = np.full((height, width, 3), 128, dtype=np.uint8)
+    rgb = (
+        np.full((height, width, 3), 128, dtype=np.uint8)
+        if rgb is None
+        else rgb.astype(np.uint8, copy=True)
+    )
     valid = (
         np.ones((height, width), dtype=bool)
         if valid_mask is None
@@ -26,7 +37,7 @@ def _result(
     x, y, box_width, box_height = subject_box
     subject_mask = np.zeros_like(valid)
     subject_mask[y : y + box_height, x : x + box_width] = True
-    subject = SubjectRegion("main_subject", subject_box, subject_mask)
+    subject = SubjectRegion(subject_kind, subject_box, subject_mask)
     lighting = {
         "debug": {
             "classifiers": {
@@ -112,6 +123,13 @@ def test_compressed_highlights_change_ceiling_shoulder_and_headroom():
     )
 
 
+def test_tone_span_ratio_states_use_documented_central_band():
+    assert _tone_span_state(TONE_SPAN_NEUTRAL_MIN - 0.01) == "compressed"
+    assert _tone_span_state(TONE_SPAN_NEUTRAL_MIN) == "neutral"
+    assert _tone_span_state(TONE_SPAN_NEUTRAL_MAX) == "neutral"
+    assert _tone_span_state(TONE_SPAN_NEUTRAL_MAX + 0.01) == "expanded"
+
+
 def test_chroma_metrics_are_monotonic():
     low = np.zeros((128, 160, 3), dtype=np.float64)
     low[..., 0], low[..., 1] = 55.0, 5.0
@@ -166,6 +184,38 @@ def test_neutral_axis_tracks_blue_and_yellow_directions():
     assert yellow_axis["overall"]["b_median"] > 0
 
 
+def test_low_neutral_share_with_colored_background_is_low_confidence():
+    lab = np.zeros((160, 200, 3), dtype=np.float64)
+    lab[...] = [48.0, -25.0, 20.0]
+    lab[60:100, 84:116] = [55.0, -2.0, 1.0]
+    axis = _result(lab).quantitative["neutral_axis"]
+    assert axis["neutral_pixel_share"] < 0.05
+    assert axis["overall"]["status"] == "low_confidence"
+    assert axis["validity_reason"] == "multi_evidence_low_confidence"
+
+
+def test_neutral_spatial_coverage_and_concentration_are_independent_evidence():
+    concentrated = np.zeros((160, 160, 3), dtype=np.float64)
+    concentrated[...] = [50.0, 24.0, -20.0]
+    concentrated[:40, :40] = [52.0, 0.0, 0.0]
+    distributed = np.zeros_like(concentrated)
+    distributed[...] = [50.0, 24.0, -20.0]
+    for row in range(4):
+        for column in range(4):
+            y, x = row * 40, column * 40
+            distributed[y : y + 10, x : x + 10] = [52.0, 0.0, 0.0]
+    concentrated_axis = _result(concentrated).quantitative["neutral_axis"]
+    distributed_axis = _result(distributed).quantitative["neutral_axis"]
+    assert (
+        distributed_axis["neutral_spatial_coverage"]
+        > concentrated_axis["neutral_spatial_coverage"]
+    )
+    assert (
+        distributed_axis["neutral_spatial_concentration"]
+        < concentrated_axis["neutral_spatial_concentration"]
+    )
+
+
 def test_scene_palette_assigns_blue_orange_and_red_roles_without_affecting_neutral_axis():
     height, width = 100, 100
     lab = np.zeros((height, width, 3), dtype=np.float64)
@@ -195,6 +245,57 @@ def test_subject_background_delta_l_changes_sign():
     assert bright["delta_l"] > 0
     assert dark["delta_l"] < 0
     assert bright["delta_e00"] > 0
+
+
+def test_face_quantitative_roi_excludes_dark_hair_from_bright_skin():
+    height, width = 240, 240
+    lab = np.zeros((height, width, 3), dtype=np.float64)
+    lab[...] = [52.0, -12.0, -18.0]
+    rgb = np.full((height, width, 3), [92, 130, 160], dtype=np.uint8)
+    box = (50, 35, 140, 170)
+    lab[35:205, 50:190] = [10.0, 0.0, 0.0]
+    rgb[35:205, 50:190] = [15, 15, 15]
+    yy, xx = np.ogrid[:height, :width]
+    face = ((xx - 120) / 44.0) ** 2 + ((yy - 125) / 60.0) ** 2 <= 1
+    lab[face] = [76.0, 18.0, 20.0]
+    rgb[face] = [218, 166, 138]
+    result = _result(
+        lab,
+        subject_box=box,
+        rgb=rgb,
+        subject_kind="face",
+    ).quantitative["subject_background"]
+    assert result["status"] == "valid"
+    assert result["roi"]["mask_method"] == "face_core_skin_mask"
+    assert result["subject"]["l_p50"] > result["background"]["l_p50"]
+    assert result["delta_l"] > 0
+
+
+def test_face_quantitative_roi_fails_closed_when_skin_samples_are_insufficient():
+    lab = np.zeros((180, 220, 3), dtype=np.float64)
+    lab[...] = [55.0, -18.0, -20.0]
+    rgb = np.full((180, 220, 3), [70, 130, 180], dtype=np.uint8)
+    result = _result(
+        lab,
+        subject_box=(55, 25, 110, 130),
+        rgb=rgb,
+        subject_kind="face",
+    ).quantitative["subject_background"]
+    assert result["status"] == "insufficient"
+    assert result["roi"]["mask_method"] == "face_core_skin_mask_insufficient"
+    assert result["subject"] is None
+
+
+def test_people_like_dark_background_preserves_global_l50_semantics():
+    lab = np.zeros((200, 240, 3), dtype=np.float64)
+    lab[...] = [8.3, 0.0, 0.0]
+    box = (90, 50, 60, 110)
+    x, y, box_width, box_height = box
+    lab[y : y + box_height, x : x + box_width] = [74.0, 12.0, 14.0]
+    quantitative = _result(lab, subject_box=box).quantitative
+    assert quantitative["luminance"]["percentiles"]["p50"] == 8.3
+    assert quantitative["subject_background"]["subject"]["l_p50"] == 74.0
+    assert "全局" in quantitative["summary_zh"]
 
 
 def test_local_contrast_is_not_global_image_standard_deviation():

@@ -361,7 +361,7 @@
       "type": "object",
       "required": ["status", "sample_share", "sample_count", "a_median", "b_median", "c_median"],
       "properties": {
-        "status": {"enum": ["valid", "insufficient"]},
+        "status": {"enum": ["valid", "low_confidence", "insufficient"]},
         "sample_share": {"$ref": "#/$defs/share"},
         "sample_count": {"type": "integer", "minimum": 0},
         "a_median": {"$ref": "#/$defs/nullableNumber"},
@@ -486,7 +486,8 @@
           "type": "object",
           "required": [
             "black_floor_p1", "shadow_floor_p5", "highlight_ceiling_p99",
-            "highlight_headroom", "midtone_spread", "toe_ratio", "shoulder_ratio"
+            "highlight_headroom", "midtone_spread", "toe_ratio", "shoulder_ratio",
+            "toe_state", "shoulder_state"
           ],
           "properties": {
             "black_floor_p1": {"$ref": "#/$defs/lstar"},
@@ -495,7 +496,9 @@
             "highlight_headroom": {"$ref": "#/$defs/lstar"},
             "midtone_spread": {"type": "number", "minimum": 0, "maximum": 100},
             "toe_ratio": {"type": "number", "minimum": 0},
-            "shoulder_ratio": {"type": "number", "minimum": 0}
+            "shoulder_ratio": {"type": "number", "minimum": 0},
+            "toe_state": {"enum": ["compressed", "neutral", "expanded"]},
+            "shoulder_state": {"enum": ["compressed", "neutral", "expanded"]}
           },
           "additionalProperties": false
         },
@@ -560,7 +563,13 @@
         },
         "neutral_axis": {
           "type": "object",
-          "required": ["candidate_definition", "neutral_pixel_share", "neutral_spatial_coverage", "overall", "segments"],
+          "required": [
+            "candidate_definition", "neutral_pixel_share", "neutral_spatial_coverage",
+            "subject_neutral_share", "background_neutral_share",
+            "neutral_spatial_concentration", "neutral_active_tile_count",
+            "neutral_a_mad", "neutral_b_mad", "neutral_confidence",
+            "validity_reason", "overall", "segments"
+          ],
           "properties": {
             "candidate_definition": {
               "type": "object",
@@ -574,6 +583,14 @@
             },
             "neutral_pixel_share": {"$ref": "#/$defs/share"},
             "neutral_spatial_coverage": {"$ref": "#/$defs/share"},
+            "subject_neutral_share": {"$ref": "#/$defs/nullableShare"},
+            "background_neutral_share": {"$ref": "#/$defs/nullableShare"},
+            "neutral_spatial_concentration": {"$ref": "#/$defs/share"},
+            "neutral_active_tile_count": {"type": "integer", "minimum": 0, "maximum": 16},
+            "neutral_a_mad": {"$ref": "#/$defs/nullableNumber"},
+            "neutral_b_mad": {"$ref": "#/$defs/nullableNumber"},
+            "neutral_confidence": {"$ref": "#/$defs/share"},
+            "validity_reason": {"enum": ["multi_evidence_valid", "multi_evidence_low_confidence", "insufficient_neutral_samples"]},
             "overall": {"$ref": "#/$defs/axisSegment"},
             "segments": {
               "type": "object",
@@ -627,10 +644,13 @@
             "status": {"enum": ["valid", "insufficient"]},
             "roi": {
               "type": "object",
-              "required": ["type", "box"],
+              "required": ["type", "box", "mask_method", "pixel_share", "region_pixel_share"],
               "properties": {
                 "type": {"enum": ["face", "upper_body", "full_body", "main_subject"]},
-                "box": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0}}
+                "box": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0}},
+                "mask_method": {"enum": ["region_mask", "main_subject_grabcut", "face_core_skin_mask", "face_core_skin_mask_insufficient"]},
+                "pixel_share": {"$ref": "#/$defs/share"},
+                "region_pixel_share": {"$ref": "#/$defs/share"}
               },
               "additionalProperties": false
             },

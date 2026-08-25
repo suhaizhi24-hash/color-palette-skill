@@ -190,6 +190,19 @@ def _base_skin_mask(rgb: np.ndarray, lab: np.ndarray, valid_mask: np.ndarray) ->
     )
 
 
+def skin_candidate_mask(
+    rgb: np.ndarray, lab: np.ndarray, valid_mask: np.ndarray
+) -> np.ndarray:
+    """Expose the existing conservative skin candidates for quantitative ROI use.
+
+    This wrapper deliberately keeps the formal skin-anchor algorithm unchanged.
+    Quantitative subject/background measurements may further restrict this mask,
+    but must never broaden it or replace insufficient samples with a full face box.
+    """
+
+    return _base_skin_mask(rgb, lab, valid_mask)
+
+
 def _robust_sample(rgb: np.ndarray, lab: np.ndarray, skin_mask: np.ndarray, roi: np.ndarray) -> dict | None:
     target = roi & skin_mask
     roi_count = int(roi.sum())

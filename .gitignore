@@ -48,6 +48,10 @@ qa/light_v014_preview_review.zip
 # v0.15 定量分析开发 Preview（合成数据，可本地复算，不属于正式报告UI）
 qa/quant_v015_preview/
 
+# v0.15 定量分析真实照片人工验收（本地私密 QA，不得提交）
+qa/quant_v015_real_review/
+qa/quant_v015_real_review_round2/
+
 .env
 .env.*
 !.env.example

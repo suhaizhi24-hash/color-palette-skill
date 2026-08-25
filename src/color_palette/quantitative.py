@@ -9,6 +9,7 @@ import numpy as np
 from skimage.color import deltaE_ciede2000, lab2rgb
 from sklearn.cluster import MiniBatchKMeans
 
+from .faces import skin_candidate_mask
 from .lighting import SubjectRegion
 
 LUMINANCE_PERCENTILES = (1, 5, 25, 50, 75, 95, 99)
@@ -26,6 +27,15 @@ NEUTRAL_CHROMA_MAX = 8.0
 NEUTRAL_L_MIN = 10.0
 NEUTRAL_L_MAX = 95.0
 NEUTRAL_GRID_SIZE = 4
+NEUTRAL_CONFIDENCE_VALID_MIN = 0.68
+NEUTRAL_SHARE_SCORE_RANGE = (0.03, 0.15)
+NEUTRAL_COVERAGE_SCORE_RANGE = (0.25, 0.75)
+NEUTRAL_REGION_SHARE_SCORE_RANGE = (0.01, 0.08)
+NEUTRAL_CONCENTRATION_SCORE_RANGE = (0.60, 0.25)
+NEUTRAL_DISPERSION_SCORE_RANGE = (5.5, 2.5)
+TONE_SPAN_NEUTRAL_MIN = 0.8
+TONE_SPAN_NEUTRAL_MAX = 1.2
+MAIN_SUBJECT_GRABCUT_SEED = 42
 SCENE_PALETTE_CLUSTERS = 6
 SCENE_PALETTE_MAX_SAMPLES = 30_000
 SCENE_PALETTE_SEED = 42
@@ -96,6 +106,9 @@ def analyze_quantitative(
     chroma = np.hypot(astar, bstar)
     valid_l = lstar[valid_mask]
     valid_c = chroma[valid_mask]
+    quantitative_subject, subject_exclusion, subject_diagnostics = (
+        _prepare_quantitative_subject(rgb, lab, valid_mask, subject)
+    )
 
     luminance_percentiles = _percentiles(valid_l, LUMINANCE_PERCENTILES)
     chroma_percentiles = _percentiles(valid_c, CHROMA_PERCENTILES)
@@ -126,7 +139,12 @@ def analyze_quantitative(
         denominator=valid_c.size,
     )
 
-    local_contrast = _local_contrast(lstar, valid_mask, subject)
+    local_contrast = _local_contrast(
+        lstar,
+        valid_mask,
+        quantitative_subject,
+        background_exclusion=subject_exclusion,
+    )
     global_contrast = luminance_percentiles["p95"] - luminance_percentiles["p5"]
     midtone_contrast = luminance_percentiles["p75"] - luminance_percentiles["p25"]
     contrast = {
@@ -151,12 +169,28 @@ def analyze_quantitative(
     }
 
     hue_distribution = _hue_distribution(lstar, astar, bstar, chroma, valid_mask)
-    neutral_axis, neutral_mask = _neutral_axis(lstar, astar, bstar, chroma, valid_mask)
+    neutral_axis, neutral_mask = _neutral_axis(
+        lstar,
+        astar,
+        bstar,
+        chroma,
+        valid_mask,
+        subject_mask=quantitative_subject.mask,
+        background_exclusion=subject_exclusion,
+    )
     neutral_tone_palette = _neutral_tone_palette(
         rgb, lab, lstar, neutral_mask, valid_count
     )
     scene_palette = _scene_palette(rgb, lab, valid_mask)
-    subject_background = _subject_background(lab, lstar, chroma, valid_mask, subject)
+    subject_background = _subject_background(
+        lab,
+        lstar,
+        chroma,
+        valid_mask,
+        quantitative_subject,
+        background_exclusion=subject_exclusion,
+        diagnostics=subject_diagnostics,
+    )
     confidence = _confidence_summary(lighting, material_effects)
 
     quantitative = {
@@ -221,6 +255,136 @@ def _validate_inputs(rgb: np.ndarray, lab: np.ndarray, valid_mask: np.ndarray) -
         raise ValueError("Quantitative输入包含无效Lab像素")
 
 
+def _prepare_quantitative_subject(
+    rgb: np.ndarray,
+    lab: np.ndarray,
+    valid_mask: np.ndarray,
+    subject: SubjectRegion,
+) -> tuple[SubjectRegion, np.ndarray, dict]:
+    """Refine only face-based quantitative ROI; retain the original exclusion.
+
+    The original region remains the background exclusion so hair and nearby face
+    pixels cannot leak into background statistics. If the conservative face-core
+    skin mask is too small, quantitative ROI fails closed instead of reverting to
+    the contaminated rectangular face region.
+    """
+
+    original = subject.mask & valid_mask
+    valid_count = int(valid_mask.sum())
+    region_count = int(original.sum())
+    if subject.kind == "main_subject":
+        refined = _main_subject_foreground(rgb, original, subject.box)
+        refined_count = int(refined.sum())
+        minimum = max(64, _minimum_sample_count(valid_count))
+        if refined_count >= minimum:
+            return (
+                SubjectRegion(subject.kind, subject.box, refined),
+                original,
+                {
+                    "mask_method": "main_subject_grabcut",
+                    "pixel_share": round(refined_count / max(valid_count, 1), 8),
+                    "region_pixel_share": round(
+                        refined_count / max(region_count, 1), 8
+                    ),
+                },
+            )
+    if subject.kind != "face":
+        return (
+            SubjectRegion(subject.kind, subject.box, original),
+            original,
+            {
+                "mask_method": "region_mask",
+                "pixel_share": round(region_count / max(valid_count, 1), 8),
+                "region_pixel_share": 1.0 if region_count else 0.0,
+            },
+        )
+
+    x, y, width, height = subject.box
+    core = np.zeros_like(valid_mask, dtype=np.uint8)
+    center = (x + width // 2, y + round(height * 0.52))
+    axes = (max(1, round(width * 0.36)), max(1, round(height * 0.39)))
+    cv2.ellipse(core, center, axes, 0, 0, 360, 1, -1)
+    candidates = (
+        core.astype(bool) & original & skin_candidate_mask(rgb, lab, valid_mask)
+    )
+    if int(candidates.sum()):
+        values = lab[candidates]
+        median = np.median(values, axis=0)
+        mad = np.median(np.abs(values - median), axis=0)
+        limits = np.maximum(3.0 * mad, np.array([18.0, 8.0, 8.0]))
+        robust = np.all(np.abs(lab - median) <= limits, axis=2)
+        candidates &= robust
+
+    minimum = max(64, _minimum_sample_count(valid_count))
+    sample_count = int(candidates.sum())
+    sufficient = sample_count >= minimum
+    refined = candidates if sufficient else np.zeros_like(valid_mask, dtype=bool)
+    diagnostics = {
+        "mask_method": (
+            "face_core_skin_mask" if sufficient else "face_core_skin_mask_insufficient"
+        ),
+        "pixel_share": round(sample_count / max(valid_count, 1), 8),
+        "region_pixel_share": round(sample_count / max(region_count, 1), 8),
+    }
+    return SubjectRegion(subject.kind, subject.box, refined), original, diagnostics
+
+
+def _main_subject_foreground(
+    rgb: np.ndarray,
+    region_mask: np.ndarray,
+    box: tuple[int, int, int, int],
+) -> np.ndarray:
+    """Conservatively remove obvious background from main-subject fallback."""
+
+    height, width = region_mask.shape
+    scale = min(1.0, 640.0 / max(height, width))
+    small_size = (max(2, round(width * scale)), max(2, round(height * scale)))
+    small_rgb = cv2.resize(rgb, small_size, interpolation=cv2.INTER_AREA)
+    x, y, box_width, box_height = box
+    rect = (
+        max(1, round(x * scale)),
+        max(1, round(y * scale)),
+        min(small_size[0] - 2, max(1, round(box_width * scale))),
+        min(small_size[1] - 2, max(1, round(box_height * scale))),
+    )
+    rect = (
+        min(rect[0], small_size[0] - 2),
+        min(rect[1], small_size[1] - 2),
+        min(rect[2], small_size[0] - rect[0] - 1),
+        min(rect[3], small_size[1] - rect[1] - 1),
+    )
+    if rect[2] < 2 or rect[3] < 2:
+        return np.zeros_like(region_mask, dtype=bool)
+    grabcut_mask = np.zeros(small_rgb.shape[:2], dtype=np.uint8)
+    background_model = np.zeros((1, 65), dtype=np.float64)
+    foreground_model = np.zeros((1, 65), dtype=np.float64)
+    try:
+        cv2.setRNGSeed(MAIN_SUBJECT_GRABCUT_SEED)
+        cv2.grabCut(
+            small_rgb,
+            grabcut_mask,
+            rect,
+            background_model,
+            foreground_model,
+            3,
+            cv2.GC_INIT_WITH_RECT,
+        )
+    except cv2.error:
+        return np.zeros_like(region_mask, dtype=bool)
+    foreground = np.isin(grabcut_mask, (cv2.GC_FGD, cv2.GC_PR_FGD)).astype(np.uint8)
+    component_count, labels, stats, _ = cv2.connectedComponentsWithStats(
+        foreground, connectivity=8
+    )
+    if component_count <= 1:
+        return np.zeros_like(region_mask, dtype=bool)
+    largest = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    foreground = (labels == largest).astype(np.uint8)
+    foreground = cv2.resize(
+        foreground, (width, height), interpolation=cv2.INTER_NEAREST
+    ).astype(bool)
+    return foreground & region_mask
+
+
 def _percentiles(values: np.ndarray, percentiles: tuple[int, ...]) -> dict[str, float]:
     measured = np.percentile(values, percentiles)
     return {
@@ -252,7 +416,11 @@ def _normalized_histogram(
 
 
 def _local_contrast(
-    lstar: np.ndarray, valid_mask: np.ndarray, subject: SubjectRegion
+    lstar: np.ndarray,
+    valid_mask: np.ndarray,
+    subject: SubjectRegion,
+    *,
+    background_exclusion: np.ndarray,
 ) -> dict:
     short_side = min(lstar.shape)
     kernel = max(15, min(61, round(short_side * 0.03)))
@@ -299,7 +467,8 @@ def _local_contrast(
     if subject_values.size >= 32:
         result["subject_local_contrast_median"] = _round(np.median(subject_values))
     margin = _dilate(
-        subject.mask, max(1, round(short_side * SUBJECT_BACKGROUND_MARGIN_SHARE))
+        background_exclusion,
+        max(1, round(short_side * SUBJECT_BACKGROUND_MARGIN_SHARE)),
     )
     background_values = local_std[valid_window & valid_mask & ~margin]
     if background_values.size >= 32:
@@ -311,15 +480,27 @@ def _local_contrast(
 
 def _tone_signature(percentiles: dict[str, float]) -> dict:
     midtone = max(percentiles["p75"] - percentiles["p25"], EPSILON)
+    toe_ratio = (percentiles["p25"] - percentiles["p5"]) / midtone
+    shoulder_ratio = (percentiles["p95"] - percentiles["p75"]) / midtone
     return {
         "black_floor_p1": percentiles["p1"],
         "shadow_floor_p5": percentiles["p5"],
         "highlight_ceiling_p99": percentiles["p99"],
         "highlight_headroom": _round(100.0 - percentiles["p95"]),
         "midtone_spread": _round(percentiles["p75"] - percentiles["p25"]),
-        "toe_ratio": _round((percentiles["p25"] - percentiles["p5"]) / midtone),
-        "shoulder_ratio": _round((percentiles["p95"] - percentiles["p75"]) / midtone),
+        "toe_ratio": _round(toe_ratio),
+        "shoulder_ratio": _round(shoulder_ratio),
+        "toe_state": _tone_span_state(toe_ratio),
+        "shoulder_state": _tone_span_state(shoulder_ratio),
     }
+
+
+def _tone_span_state(ratio: float) -> str:
+    if ratio < TONE_SPAN_NEUTRAL_MIN:
+        return "compressed"
+    if ratio <= TONE_SPAN_NEUTRAL_MAX:
+        return "neutral"
+    return "expanded"
 
 
 def _hue_distribution(
@@ -378,6 +559,9 @@ def _neutral_axis(
     bstar: np.ndarray,
     chroma: np.ndarray,
     valid_mask: np.ndarray,
+    *,
+    subject_mask: np.ndarray,
+    background_exclusion: np.ndarray,
 ) -> tuple[dict, np.ndarray]:
     neutral = (
         valid_mask
@@ -387,6 +571,16 @@ def _neutral_axis(
     )
     valid_count = int(valid_mask.sum())
     minimum = _minimum_sample_count(valid_count)
+    coverage, concentration, active_tiles = _neutral_spatial_diagnostics(
+        neutral, valid_mask
+    )
+    subject_valid = subject_mask & valid_mask
+    background_valid = valid_mask & ~_dilate(
+        background_exclusion,
+        max(1, round(min(valid_mask.shape) * SUBJECT_BACKGROUND_MARGIN_SHARE)),
+    )
+    subject_share = _masked_share(neutral, subject_valid)
+    background_share = _masked_share(neutral, background_valid)
     result = {
         "candidate_definition": {
             "c_max": NEUTRAL_CHROMA_MAX,
@@ -394,7 +588,15 @@ def _neutral_axis(
             "l_max": NEUTRAL_L_MAX,
         },
         "neutral_pixel_share": round(float(neutral.sum() / valid_count), 8),
-        "neutral_spatial_coverage": _neutral_spatial_coverage(neutral, valid_mask),
+        "neutral_spatial_coverage": coverage,
+        "subject_neutral_share": subject_share,
+        "background_neutral_share": background_share,
+        "neutral_spatial_concentration": concentration,
+        "neutral_active_tile_count": active_tiles,
+        "neutral_a_mad": None,
+        "neutral_b_mad": None,
+        "neutral_confidence": 0.0,
+        "validity_reason": "insufficient_neutral_samples",
         "overall": _axis_segment(astar, bstar, chroma, neutral, valid_count, minimum),
         "segments": {},
     }
@@ -403,6 +605,42 @@ def _neutral_axis(
         result["segments"][name] = _axis_segment(
             astar, bstar, chroma, segment, valid_count, minimum
         )
+    if int(neutral.sum()) >= minimum:
+        a_mad = float(np.median(np.abs(astar[neutral] - np.median(astar[neutral]))))
+        b_mad = float(np.median(np.abs(bstar[neutral] - np.median(bstar[neutral]))))
+        result["neutral_a_mad"] = _round(a_mad)
+        result["neutral_b_mad"] = _round(b_mad)
+        segment_score = sum(
+            item["status"] == "valid" for item in result["segments"].values()
+        ) / len(NEUTRAL_RANGES)
+        available_region_shares = [
+            value for value in (subject_share, background_share) if value is not None
+        ]
+        region_score = (
+            sum(
+                _scaled_score(value, *NEUTRAL_REGION_SHARE_SCORE_RANGE)
+                for value in available_region_shares
+            )
+            / len(available_region_shares)
+            if available_region_shares
+            else 0.0
+        )
+        dispersion = math.hypot(a_mad, b_mad)
+        score = (
+            0.35
+            * _scaled_score(result["neutral_pixel_share"], *NEUTRAL_SHARE_SCORE_RANGE)
+            + 0.15 * _scaled_score(coverage, *NEUTRAL_COVERAGE_SCORE_RANGE)
+            + 0.20 * region_score
+            + 0.10 * segment_score
+            + 0.10 * _scaled_score(concentration, *NEUTRAL_CONCENTRATION_SCORE_RANGE)
+            + 0.10 * _scaled_score(dispersion, *NEUTRAL_DISPERSION_SCORE_RANGE)
+        )
+        result["neutral_confidence"] = _round(score, 6)
+        if score >= NEUTRAL_CONFIDENCE_VALID_MIN:
+            result["validity_reason"] = "multi_evidence_valid"
+        else:
+            result["overall"]["status"] = "low_confidence"
+            result["validity_reason"] = "multi_evidence_low_confidence"
     return result, neutral
 
 
@@ -434,10 +672,13 @@ def _axis_segment(
     return base
 
 
-def _neutral_spatial_coverage(neutral: np.ndarray, valid_mask: np.ndarray) -> float:
+def _neutral_spatial_diagnostics(
+    neutral: np.ndarray, valid_mask: np.ndarray
+) -> tuple[float, float, int]:
     height, width = neutral.shape
     qualified = 0
     considered = 0
+    tile_neutral_counts: list[int] = []
     for row in range(NEUTRAL_GRID_SIZE):
         y1, y2 = (
             row * height // NEUTRAL_GRID_SIZE,
@@ -451,9 +692,34 @@ def _neutral_spatial_coverage(neutral: np.ndarray, valid_mask: np.ndarray) -> fl
             if count < 32:
                 continue
             considered += 1
-            if float(neutral[y1:y2, x1:x2][tile_valid].mean()) >= 0.01:
+            tile_neutral = int(neutral[y1:y2, x1:x2][tile_valid].sum())
+            tile_neutral_counts.append(tile_neutral)
+            if tile_neutral / count >= 0.01:
                 qualified += 1
-    return round(qualified / max(considered, 1), 8)
+    total_neutral = sum(tile_neutral_counts)
+    concentration = (
+        max(tile_neutral_counts, default=0) / total_neutral if total_neutral else 1.0
+    )
+    active_tiles = sum(count > 0 for count in tile_neutral_counts)
+    return (
+        round(qualified / max(considered, 1), 8),
+        round(concentration, 8),
+        active_tiles,
+    )
+
+
+def _masked_share(target: np.ndarray, region: np.ndarray) -> float | None:
+    count = int(region.sum())
+    if count < 64:
+        return None
+    return round(float(target[region].mean()), 8)
+
+
+def _scaled_score(value: float, low: float, high: float) -> float:
+    if low == high:
+        return 1.0 if value >= high else 0.0
+    scaled = (value - low) / (high - low)
+    return min(1.0, max(0.0, scaled))
 
 
 def _neutral_tone_palette(
@@ -629,10 +895,13 @@ def _subject_background(
     chroma: np.ndarray,
     valid_mask: np.ndarray,
     subject: SubjectRegion,
+    *,
+    background_exclusion: np.ndarray,
+    diagnostics: dict,
 ) -> dict:
     subject_mask = subject.mask & valid_mask
     margin = _dilate(
-        subject_mask,
+        background_exclusion,
         max(1, round(min(valid_mask.shape) * SUBJECT_BACKGROUND_MARGIN_SHARE)),
     )
     background_mask = valid_mask & ~margin
@@ -640,7 +909,11 @@ def _subject_background(
     minimum = max(64, _minimum_sample_count(valid_count))
     base = {
         "status": "insufficient",
-        "roi": {"type": subject.kind, "box": list(subject.box)},
+        "roi": {
+            "type": subject.kind,
+            "box": list(subject.box),
+            **diagnostics,
+        },
         "subject": None,
         "background": None,
         "delta_l": None,
@@ -758,7 +1031,11 @@ def _summary_zh(
     midtone_contrast = contrast["midtone_l_p75_p25"]
     c50 = chroma["p50"]
     l_description = (
-        "中间调偏暗" if l50 < 42 else "中间调偏亮" if l50 > 58 else "中间调居中"
+        "全局画面像素中位明度偏暗"
+        if l50 < 42
+        else "全局画面像素中位明度偏亮"
+        if l50 > 58
+        else "全局画面像素中位明度居中"
     )
     contrast_description = (
         "全局反差较大"
@@ -771,14 +1048,16 @@ def _summary_zh(
         "综合色度较高" if c50 >= 30 else "综合色度中等" if c50 >= 10 else "综合色度较低"
     )
     overall = neutral["overall"]
-    if overall["status"] != "valid":
+    if overall["status"] == "insufficient":
         neutral_description = "中性色样本不足"
+    elif overall["status"] == "low_confidence":
+        neutral_description = "中性色轴置信度较低"
     else:
         a_value = overall["a_median"]
         b_value = overall["b_median"]
         neutral_description = f"中性色轴为 a* {a_value:+.2f} / b* {b_value:+.2f}"
     return (
-        f"L* P50 = {l50:.2f}，Global Contrast = {global_contrast:.2f} L*，"
+        f"全局 L* P50 = {l50:.2f}，Global Contrast = {global_contrast:.2f} L*，"
         f"Midtone Contrast = {midtone_contrast:.2f} L*，C* P50 = {c50:.2f}。"
         f"{l_description}，{contrast_description}；{chroma_description}，{neutral_description}。"
     )
