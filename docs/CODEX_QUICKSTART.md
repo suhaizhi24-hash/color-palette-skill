@@ -7,7 +7,7 @@
 打开项目的 GitHub Release 页面，下载：
 
 ```text
-color-palette-codex-kit-v0.14.1.zip
+color-palette-codex-kit-v0.15.1.zip
 ```
 
 普通用户选择这个 ZIP；熟悉 Python 的用户可以改为下载 `.whl` 文件。
@@ -16,11 +16,11 @@ color-palette-codex-kit-v0.14.1.zip
 
 ### macOS
 
-在“下载”文件夹中双击 ZIP，系统会生成 `color-palette-codex-kit-v0.14.1` 文件夹。
+在“下载”文件夹中双击 ZIP，系统会生成 `color-palette-codex-kit-v0.15.1` 文件夹。
 
 ### Windows
 
-右键 ZIP，选择“全部解压”，再打开生成的 `color-palette-codex-kit-v0.14.1` 文件夹。不要直接在压缩包预览窗口中运行。
+右键 ZIP，选择“全部解压”，再打开生成的 `color-palette-codex-kit-v0.15.1` 文件夹。不要直接在压缩包预览窗口中运行。
 
 ## 3. 放入照片
 
@@ -32,11 +32,11 @@ color-palette-codex-kit-v0.14.1.zip
 
 ### macOS
 
-在 Codex 中选择刚解压的 `color-palette-codex-kit-v0.14.1` 文件夹作为工作文件夹。
+在 Codex 中选择刚解压的 `color-palette-codex-kit-v0.15.1` 文件夹作为工作文件夹。
 
 ### Windows
 
-在 Codex 中选择“打开文件夹”，定位到解压后的 `color-palette-codex-kit-v0.14.1` 文件夹。
+在 Codex 中选择“打开文件夹”，定位到解压后的 `color-palette-codex-kit-v0.15.1` 文件夹。
 
 ## 5. 复制提示词
 

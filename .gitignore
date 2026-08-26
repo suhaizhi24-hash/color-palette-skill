@@ -52,6 +52,9 @@ qa/quant_v015_preview/
 qa/quant_v015_real_review/
 qa/quant_v015_real_review_round2/
 
+# v0.15.1 肤色锚点真实照片本地 QA（含私人像素与调试图，不得提交）
+qa/skin_v0151_real_review/
+
 .env
 .env.*
 !.env.example

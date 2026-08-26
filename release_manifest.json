@@ -1,6 +1,6 @@
 {
-  "version": "0.15.0",
-  "release_channel": "quantitative-color-candidate",
+  "version": "0.15.1",
+  "release_channel": "skin-anchor-robustness-candidate",
   "source_baseline": {
     "archive": "color-palette-skill-v0.12.0-source.zip",
     "sha256": "b73465c0671f366c1d9381f6112d4039fcaad1361225d9340f6f3386fbe57ddc",
@@ -72,6 +72,17 @@
     "disabled": "none",
     "advisory_not_core_gate": true
   },
+  "skin_anchor": {
+    "ruleset": "skin-anchor-0.15.1",
+    "baseline_first": true,
+    "recovery_only_after_zero_baseline_candidates": true,
+    "recovery_angles": [-15, -8, 8, 15],
+    "recovery_preprocessing": ["original_grayscale", "clahe", "equalized"],
+    "ambiguous_candidates": "fail_closed",
+    "primary_secondary_independent": true,
+    "formal_renderer_changed": false,
+    "private_real_photo_assets_committed": false
+  },
   "material_fx": {
     "schema": "0..N多标签",
     "ruleset": "material-fx-0.13.0",
@@ -101,18 +112,18 @@
     "formal_renderer_changed": false
   },
   "wheel": {
-    "file": "color_palette_skill-0.15.0-py3-none-any.whl",
+    "file": "color_palette_skill-0.15.1-py3-none-any.whl",
     "built_from": "触发工作流的github.sha",
     "sha256_evidence": "由同次Release Artifact工作流计算并随Wheel上传",
     "pure_python": true,
     "paid_model_runtime_dependency": false
   },
   "codex_kit": {
-    "file": "color-palette-codex-kit-v0.15.0.zip",
+    "file": "color-palette-codex-kit-v0.15.1.zip",
     "members": [
       "START_HERE.md",
       "CODEX_PROMPT.txt",
-      "color_palette_skill-0.15.0-py3-none-any.whl",
+      "color_palette_skill-0.15.1-py3-none-any.whl",
       "sample/synthetic_sample.png"
     ],
     "sample_source": "examples/synthetic_portrait.png",
@@ -139,7 +150,7 @@
     "Light Source为确定性视觉特征推断，复杂布光或重度后期可能需要降级为暂不判定",
     "Material FX为确定性视觉特征推断，不能证明作者实际使用的软件、滤镜或制作步骤",
     "Case 001与Case 002真实私人样片未进入仓库，合并前状态保持待本地复验",
-    "OpenCV基础人脸检测可能漏检侧脸、遮挡或多人场景",
+    "OpenCV恢复检测改善了倾斜与柔焦单人像，但极端侧脸、遮挡、过小人脸或多个相似候选仍会安全降级为样本不足",
     "完全缺少CJK系统字体时报告仍会输出，但中文可读性取决于运行环境字体",
     "dlib为可选增强，不属于核心发布门禁"
   ]

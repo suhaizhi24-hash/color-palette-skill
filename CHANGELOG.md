@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.15.0 — Unreleased
+## 0.15.1 — Unreleased
+
+- 当 OpenCV 常规检测为 0 时，新增仅限本地的旋转与灰度增强恢复检测，改善倾斜、柔焦单人像漏检；
+- 恢复候选经逆旋转映射、肤色占比与亮度合理性验证，多个近似候选继续 fail closed；
+- 苹果肌主锚点与额头副锚点独立评估，主锚点优先选择稳定中间调肤色，不再简单偏好最亮候选；
+- `analysis.json` 新增兼容性 `skin.diagnostics`，正式 PNG 不显示检测器、置信度或内部失败原因；
+- 保持 Quantitative Core、Light Analysis、Material FX、七模块布局、1600×1200 PNG + JSON 与 Zero-token 契约不变。
+
+## 0.15.0
 
 - 新增基于 CIELAB L* / C*ab 的 Quantitative Color Analysis Core；
 - 新增亮度百分位、固定直方图、全局/中间调/局部对比与 Observed Tone Signature；

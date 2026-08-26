@@ -41,7 +41,7 @@ def test_analysis_schema_targets_v015():
 
 
 def test_version_and_release_contract_are_consistent():
-    package_version = "0.15.0"
+    package_version = "0.15.1"
     analysis_contract = "0.15.0"
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     schema = json.loads((ROOT / "schemas" / "analysis.schema.json").read_text())

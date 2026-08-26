@@ -131,19 +131,19 @@ jobs:
       - name: 审计 Wheel
         run: >-
           python tools/audit_wheel.py dist
-          --expected-version 0.15.0
+          --expected-version 0.15.1
           --output wheel_audit_release.json
 
       - name: 构建 Codex 快速体验包
         run: >-
           python tools/build_codex_kit.py dist
-          --output dist/color-palette-codex-kit-v0.15.0.zip
+          --output dist/color-palette-codex-kit-v0.15.1.zip
           --result codex_kit_build_release.json
 
       - name: 验证 Codex Kit 干净安装与跨路径
         run: >-
           python tools/verify_codex_kit.py
-          dist/color-palette-codex-kit-v0.15.0.zip
+          dist/color-palette-codex-kit-v0.15.1.zip
           --schema schemas/analysis.schema.json
           --result codex_kit_smoke_release.json
 
@@ -181,10 +181,10 @@ jobs:
       - name: 上传已验证的发布候选 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: color-palette-skill-v0.15.0-${{ github.sha }}
+          name: color-palette-skill-v0.15.1-${{ github.sha }}
           path: |
             dist/*.whl
-            dist/color-palette-codex-kit-v0.15.0.zip
+            dist/color-palette-codex-kit-v0.15.1.zip
             dist/SHA256SUMS.txt
             dist/SOURCE_COMMIT.txt
             privacy_scan_release.json

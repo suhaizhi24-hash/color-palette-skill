@@ -111,7 +111,71 @@
       "properties": {
         "status": {"enum": ["单人", "多人不合并", "无人像", "未验证"]},
         "requested_backend": {"enum": ["auto", "opencv", "dlib", "none"]},
-        "backend_degraded": {"type": "boolean"}
+        "backend_degraded": {"type": "boolean"},
+        "diagnostics": {
+          "type": "object",
+          "required": [
+            "face_candidates",
+            "backend",
+            "recovery_used",
+            "failure_stage",
+            "failure_reason",
+            "primary_anchor_reason",
+            "secondary_anchor_reason",
+            "performance"
+          ],
+          "properties": {
+            "face_candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["box", "source", "accepted", "score", "reason"],
+                "properties": {
+                  "box": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "source": {"enum": ["baseline", "recovery"]},
+                  "accepted": {"type": "boolean"},
+                  "score": {"type": "number", "minimum": 0},
+                  "reason": {"type": "string"},
+                  "preprocessing": {"type": "string"},
+                  "angle": {"type": "number"},
+                  "area_share": {"type": "number", "minimum": 0, "maximum": 1},
+                  "skin_pixel_share": {"type": "number", "minimum": 0, "maximum": 1},
+                  "median_l": {"type": "number", "minimum": 0, "maximum": 100}
+                }
+              }
+            },
+            "backend": {"type": "string"},
+            "recovery_used": {"type": "boolean"},
+            "failure_stage": {
+              "type": ["string", "null"],
+              "enum": [
+                "no_face_candidate", "multiple_faces", "face_too_small",
+                "face_low_confidence", "primary_roi_invalid", "skin_pixel_share_low",
+                "luminance_out_of_range", "color_out_of_skin_range", "high_variance",
+                "occluded", "secondary_anchor_invalid", "valid", null
+              ]
+            },
+            "failure_reason": {"type": ["string", "null"]},
+            "primary_anchor_reason": {"type": ["string", "null"]},
+            "secondary_anchor_reason": {"type": ["string", "null"]},
+            "performance": {
+              "type": "object",
+              "required": ["face_detection_ms", "recovery_detection_ms", "skin_anchor_ms"],
+              "properties": {
+                "face_detection_ms": {"type": "number", "minimum": 0},
+                "recovery_detection_ms": {"type": "number", "minimum": 0},
+                "skin_anchor_ms": {"type": "number", "minimum": 0}
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
       }
     },
     "lighting": {
