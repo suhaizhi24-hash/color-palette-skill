@@ -3,12 +3,12 @@ name: color-palette-skill
 description: Local-first、Zero-token 的中文照片色彩分析与 4:3 PNG/JSON 报告 Skill。用于分析影调、明暗、色彩浓度、白平衡与色相、肤色、素材特效、光线，以及涉及调色、LUT、Camera/Film Emulation 的任务；相关知识优先读取中央摄影知识树。
 ---
 
-# 调色盘 / 色彩卡片 SKILL V0.14.1（中文官方框架版）
+# 调色盘 / 色彩卡片 SKILL V0.15.0（Quantitative Candidate）
 
 ## 定位
 Local-first / Zero-token 的专业照片色彩分析工具。
 
-> 当前状态：**v0.14.1 Candidate，仅优化安装与 Codex 快速体验；分析规则沿用 v0.14.0，A–F 真实照片 Benchmark 尚未完成。**
+> 当前状态：**v0.15.0 Candidate，Quantitative Engine、Schema 与合成规则测试进入工程验收；正式七模块 Renderer 沿用 v0.14，A–F 外部真实照片 Benchmark 状态不被本轮软件测试升级。**
 > 在外部真实照片完成 6/6 验收前，不得将本候选版本标记为真实照片验证通过。
 
 ## 最高规则 0：官方语言必须为中文
@@ -400,7 +400,15 @@ color-palette-golden ./images \
   --strict-missing
 ```
 
-# V0.14.0 当前工程契约（延续 V0.12.0 发布加固）
+# V0.15.0 当前工程契约（延续 V0.14.1 发布加固）
+
+## Quantitative Core
+- 数值先于形容词：先输出可复算 L*、C*ab、Hue、Neutral Axis、Tone Signature、Scene Palette 和 Subject/Background 指标，再生成中文解释；
+- 测量对象是 ICC 标准化后的 sRGB 显示成片，不等于 RAW、场景绝对亮度或编辑面板参数；
+- `analysis.json` 新增可选 `quantitative` 与 `color_dna`，旧七模块字段继续保留；
+- 最终 JPEG / PNG 无法唯一反推出 Lightroom / Camera Raw 原始参数，禁止输出无外部证据的曝光、曲线、色温或滑块值；
+- Compare Mode v0.16 与 Style DNA v0.17 本轮只有规格，不得声称已经实现；
+- Quantitative Preview 必须标记 `development_preview = true`，不属于正式 UI。
 
 ## 跨平台字体
 - macOS 首选 PingFang SC（苹方简）；
@@ -421,7 +429,7 @@ color-palette-golden ./images \
 
 ## 人脸后端
 - 跨平台默认使用 OpenCV；
-- V0.14.0 的依赖接受范围为 OpenCV `>=4.14,<5`；核心 CI 对各平台实际解析到的 OpenCV 4.x 运行完整测试，暂不承诺 OpenCV 5.x；
+- V0.15.0 的依赖接受范围为 OpenCV `>=4.14,<5`；核心 CI 对各平台实际解析到的 OpenCV 4.x 运行完整测试，暂不承诺 OpenCV 5.x；
 - dlib 为可选增强，不得成为核心依赖；
 - dlib 缺失或失败时安全降级至 OpenCV；
 - `none` 允许关闭肤色分析，但不得影响核心色彩分析；

@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
+
 import numpy as np
-import cv2
 from PIL import Image
-from skimage.color import rgb2lab, rgb2hsv
+from skimage.color import rgb2hsv, rgb2lab
 
 from .colors import dominant_tonal_palette, hue_name
 from .copy import official_report
 from .faces import analyze_skin_anchors, detect_faces
 from .io import LoadedImage, load_image
-from .lighting import analyze_lighting, legacy_light
+from .lighting import analyze_lighting, legacy_light, select_subject_region
 from .material_fx import analyze_material_fx, legacy_effects
+from .quantitative import analyze_quantitative
 from .rules import (
     RULESET_VERSION,
     clipping_class,
@@ -30,6 +32,7 @@ def analyze(
     include_palette: bool = True,
     face_backend: str | None = None,
 ) -> tuple[dict, LoadedImage, Image.Image]:
+    analysis_started = time.perf_counter()
     loaded = load_image(path)
     source_rgb = loaded.rgb_image
     scale = min(1.0, max_side / max(source_rgb.size))
@@ -44,7 +47,9 @@ def analyze(
     if loaded.valid_mask.shape != (source_rgb.height, source_rgb.width):
         raise ValueError("透明像素掩膜尺寸不一致")
     mask_image = Image.fromarray((loaded.valid_mask.astype(np.uint8) * 255), mode="L")
-    working_mask = np.asarray(mask_image.resize(working_size, Image.Resampling.NEAREST)) > 0
+    working_mask = (
+        np.asarray(mask_image.resize(working_size, Image.Resampling.NEAREST)) > 0
+    )
 
     lab = rgb2lab(rgb01)
     hsv = rgb2hsv(rgb01)
@@ -53,7 +58,10 @@ def analyze(
     valid_l = lightness[working_mask]
     valid_s = saturation[working_mask & (lightness > 8)]
 
-    percentiles = {f"p{q}": round(float(np.percentile(valid_l, q)), 2) for q in [1, 5, 25, 50, 75, 95, 99]}
+    percentiles = {
+        f"p{q}": round(float(np.percentile(valid_l, q)), 2)
+        for q in [1, 5, 25, 50, 75, 95, 99]
+    }
     shares = {
         "shadows": round(float(np.mean(valid_l < 35)), 6),
         "midtones": round(float(np.mean((valid_l >= 35) & (valid_l < 70))), 6),
@@ -75,7 +83,9 @@ def analyze(
     sat_level = saturation_level(median_s)
     sat_shares = {
         "low": round(float(np.mean(valid_s < 0.20)), 6) if valid_s.size else 1.0,
-        "mid": round(float(np.mean((valid_s >= 0.20) & (valid_s < 0.55))), 6) if valid_s.size else 0.0,
+        "mid": round(float(np.mean((valid_s >= 0.20) & (valid_s < 0.55))), 6)
+        if valid_s.size
+        else 0.0,
         "high": round(float(np.mean(valid_s >= 0.55)), 6) if valid_s.size else 0.0,
     }
     saturation_description = {
@@ -88,8 +98,16 @@ def analyze(
     neutral_mask = working_mask & (chroma < 8) & (lightness > 20) & (lightness < 90)
     neutral_share = round(float(neutral_mask.sum() / max(working_mask.sum(), 1)), 6)
     neutral_coverage = _neutral_spatial_coverage(neutral_mask, working_mask)
-    a_median = round(float(np.median(lab[..., 1][neutral_mask])), 2) if neutral_mask.any() else None
-    b_median = round(float(np.median(lab[..., 2][neutral_mask])), 2) if neutral_mask.any() else None
+    a_median = (
+        round(float(np.median(lab[..., 1][neutral_mask])), 2)
+        if neutral_mask.any()
+        else None
+    )
+    b_median = (
+        round(float(np.median(lab[..., 2][neutral_mask])), 2)
+        if neutral_mask.any()
+        else None
+    )
     wb_status, wb_judgement = white_balance_judgement(
         neutral_share, neutral_coverage, a_median, b_median
     )
@@ -103,11 +121,17 @@ def analyze(
         if region_mask.any():
             median_rgb = np.median(rgb[region_mask], axis=0)
             rgb_values = [int(round(value)) for value in median_rgb]
-            tonal_regions.append({"role": role, "rgb": rgb_values, "hue": hue_name(rgb_values)})
+            tonal_regions.append(
+                {"role": role, "rgb": rgb_values, "hue": hue_name(rgb_values)}
+            )
         else:
-            tonal_regions.append({"role": role, "rgb": [128, 128, 128], "hue": "中性灰"})
+            tonal_regions.append(
+                {"role": role, "rgb": [128, 128, 128], "hue": "中性灰"}
+            )
 
-    palette = dominant_tonal_palette(rgb01, lab, working_mask) if include_palette else []
+    palette = (
+        dominant_tonal_palette(rgb01, lab, working_mask) if include_palette else []
+    )
     if analyze_faces:
         face_detection = detect_faces(rgb, backend=face_backend)
         skin = analyze_skin_anchors(rgb, lab, working_mask, face_detection)
@@ -133,9 +157,21 @@ def analyze(
     light = legacy_light(lighting)
     material_effects = analyze_material_fx(rgb, working_mask)
     effects = legacy_effects(material_effects)
+    subject = select_subject_region(working_mask, face_box=skin.get("face_box"))
+    quantitative_result = analyze_quantitative(
+        rgb,
+        lab,
+        working_mask,
+        subject=subject,
+        lighting=lighting,
+        material_effects=material_effects,
+    )
+    quantitative_result.quantitative["performance"]["analysis_runtime_ms"] = round(
+        (time.perf_counter() - analysis_started) * 1000.0, 3
+    )
 
     analysis = {
-        "schema_version": "0.14.0",
+        "schema_version": "0.15.0",
         "ruleset_version": RULESET_VERSION,
         "official_language": "zh-CN",
         "zero_token": True,
@@ -157,7 +193,11 @@ def analyze(
                 "white_class": clipping_class(white_clip),
             },
         },
-        "contrast": {"span_l": span_l, "level": contrast, "description": contrast_description},
+        "contrast": {
+            "span_l": span_l,
+            "level": contrast,
+            "description": contrast_description,
+        },
         "saturation": {
             "metric": "HSV_S",
             "median": median_s,
@@ -180,6 +220,8 @@ def analyze(
         "light": light,
         "material_effects": material_effects,
         "effects": effects,
+        "quantitative": quantitative_result.quantitative,
+        "color_dna": quantitative_result.color_dna,
         "render_policy": {
             "official_report_format": "png",
             "show_skin_anchor_markers": False,
@@ -227,7 +269,9 @@ def _scale_skin_to_source(skin: dict, scale: float) -> None:
         if not anchor:
             continue
         if "center" in anchor:
-            anchor["source_center"] = [round(value * inverse, 2) for value in anchor["center"]]
+            anchor["source_center"] = [
+                round(value * inverse, 2) for value in anchor["center"]
+            ]
         crop = anchor.get("crop")
         if crop:
             anchor["source_crop"] = {

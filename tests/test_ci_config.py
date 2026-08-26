@@ -31,7 +31,7 @@ def test_ci_contains_cross_platform_matrix_and_wheel_smoke():
     assert "dist/*.whl" in text
     assert "build_codex_kit.py" in text
     assert "verify_codex_kit.py" in text
-    assert "color-palette-codex-kit-v0.14.1.zip" in text
+    assert "color-palette-codex-kit-v0.15.0.zip" in text
     assert "matrix.python-version == '3.12'" in text
 
 

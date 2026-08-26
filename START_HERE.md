@@ -19,6 +19,6 @@
 如果你会使用终端：
 
 ```bash
-python -m pip install color_palette_skill-0.14.1-py3-none-any.whl
+python -m pip install color_palette_skill-0.15.0-py3-none-any.whl
 color-palette photo.jpg --output ./result
 ```

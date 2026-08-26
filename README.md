@@ -55,7 +55,7 @@ color_report.png
 
 下面的报告来自程序生成的公开合成样片，不包含私人照片：
 
-![公开合成示例报告](examples/output_v014/synthetic_portrait_color_report.png)
+![公开合成示例报告](examples/output_v015/synthetic_portrait_color_report.png)
 
 ## 摄影知识 Consumer
 
@@ -72,6 +72,8 @@ output/
 ├── photo_analysis.json
 └── photo_color_report.png
 ```
+
+v0.15.0 Candidate 的 `analysis.json` 新增 `quantitative` 与 `color_dna`：以 L*、C*ab、Hue、Neutral Axis、Observed Tone Signature、Scene Palette 和 Subject/Background ΔE00 等可复算指标作为分析主体。正式 PNG 版式本轮不变。指标定义见 [v0.15 定量分析说明](docs/QUANTITATIVE_COLOR_ANALYSIS_V0.15.md)。
 
 正式报告固定为 4:3、1600×1200，包含七个中文模块：
 
@@ -217,7 +219,7 @@ python -m pip install -e ".[dev]"
 
 ## 当前阶段
 
-V0.14.1 Candidate：仅优化下载、安装与 Codex 快速体验；色彩分析、Light Analysis、Material FX、肤色算法、中文七模块和 PNG-only 协议均沿用 V0.14.0。
+V0.15.0 Quantitative Candidate：新增定量分析、Schema、合成 Golden Dataset 与开发 Preview；不修改 Light Analysis、Material FX、肤色算法、正式中文七模块 Renderer 或 PNG-only 协议。最新公开下载仍为 v0.14.1，本分支不得在人工验收前创建 Tag 或 Release。
 
 仓库配置了 Ubuntu、macOS、Windows 与 Python 3.10、3.12、3.13 的 GitHub Actions 矩阵。具体通过状态以当前 Pull Request 的 Actions 结果为准。
 

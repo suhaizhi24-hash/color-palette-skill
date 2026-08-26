@@ -94,7 +94,7 @@ PUBLIC_JSON_ALLOWLIST = frozenset(
         "config/output_policy.json",
         "examples/golden_ground_truth.example.json",
         "examples/light_effect_ground_truth.example.json",
-        "examples/output_v014/synthetic_portrait_analysis.json",
+        "examples/output_v015/synthetic_portrait_analysis.json",
         "examples/public_examples_manifest.json",
         "examples/public_examples_provenance.json",
         "release_manifest.json",
@@ -111,11 +111,12 @@ PUBLIC_GROUND_TRUTH_JSONS = frozenset(
     }
 )
 PUBLIC_ANALYSIS_JSONS = frozenset(
-    {"examples/output_v014/synthetic_portrait_analysis.json"}
+    {"examples/output_v015/synthetic_portrait_analysis.json"}
 )
 LIGHTING_BENCHMARK_JSON = "tests/lighting/lighting_benchmark.json"
 PUBLIC_IMAGE_LICENSE = "CC0-1.0"
-PUBLIC_RELEASE_VERSION = "0.14.0"
+PUBLIC_RELEASE_VERSION = "0.15.0"
+LIGHTING_BENCHMARK_VERSION = "0.14.0"
 PUBLIC_MANIFEST_ORIGIN = "程序生成，无真人、无私人素材、无外部版权依赖"
 
 SECRET_PATTERNS = {
@@ -589,8 +590,8 @@ def _validate_lighting_benchmark(root: Path, relative: str, errors: list[str]) -
     document = _load_json(root / relative, "Lighting Benchmark登记", errors)
     if not isinstance(document, dict):
         return
-    if document.get("schema_version") != PUBLIC_RELEASE_VERSION:
-        errors.append(f"Lighting Benchmark版本必须为{PUBLIC_RELEASE_VERSION}")
+    if document.get("schema_version") != LIGHTING_BENCHMARK_VERSION:
+        errors.append(f"Lighting Benchmark版本必须为{LIGHTING_BENCHMARK_VERSION}")
     dataset = document.get("dataset")
     if not isinstance(dataset, dict) or dataset.get("privacy") != "外部本地测试，不进入公开仓库":
         errors.append("Lighting Benchmark必须声明外部本地测试隐私边界")

@@ -91,7 +91,7 @@ def test_release_workflow_runs_complete_gates_in_safe_order():
         "color-palette-doctor",
         "build_codex_kit.py",
         "verify_codex_kit.py",
-        "--expected-version 0.14.1",
+        "--expected-version 0.15.0",
         "run_lighting_benchmark.py --manifest-only",
         "SOURCE_DATE_EPOCH",
         "{'.jpg', '.jpeg'}",
@@ -109,7 +109,7 @@ def test_release_artifact_contains_wheel_hash_commit_and_gate_evidence():
 
     for marker in (
         "dist/*.whl",
-        "dist/color-palette-codex-kit-v0.14.1.zip",
+        "dist/color-palette-codex-kit-v0.15.0.zip",
         "dist/SHA256SUMS.txt",
         "dist/SOURCE_COMMIT.txt",
         "privacy_scan_release.json",

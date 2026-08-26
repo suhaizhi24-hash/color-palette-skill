@@ -1,6 +1,6 @@
 {
-  "version": "0.14.1",
-  "release_channel": "codex-experience-candidate",
+  "version": "0.15.0",
+  "release_channel": "quantitative-color-candidate",
   "source_baseline": {
     "archive": "color-palette-skill-v0.12.0-source.zip",
     "sha256": "b73465c0671f366c1d9381f6112d4039fcaad1361225d9340f6f3386fbe57ddc",
@@ -26,6 +26,7 @@
     "required_local_gates": [
       "Python compileall",
       "pytest",
+      "Quantitative synthetic Golden Dataset与五次确定性测试",
       "JSON Schema校验",
       "Light Analysis自动规则与A-F外部Benchmark登记校验",
       "公开Golden Dataset",
@@ -88,19 +89,30 @@
     "color_temperature_role": "auxiliary_only_not_decisive",
     "real_anchor_status": "A-F Ground Truth已登记，真实图片等待仓库外用户验证"
   },
+  "quantitative": {
+    "schema": "0.15.0",
+    "measurement_context": "ICC标准化后的sRGB显示成片",
+    "lightness": "CIELAB L*",
+    "chroma": "CIELAB C*ab",
+    "deterministic_scene_palette_seed": 42,
+    "compare_mode": "spec_only_not_implemented",
+    "style_dna": "spec_only_not_implemented",
+    "lightroom_parameter_inference": false,
+    "formal_renderer_changed": false
+  },
   "wheel": {
-    "file": "color_palette_skill-0.14.1-py3-none-any.whl",
+    "file": "color_palette_skill-0.15.0-py3-none-any.whl",
     "built_from": "触发工作流的github.sha",
     "sha256_evidence": "由同次Release Artifact工作流计算并随Wheel上传",
     "pure_python": true,
     "paid_model_runtime_dependency": false
   },
   "codex_kit": {
-    "file": "color-palette-codex-kit-v0.14.1.zip",
+    "file": "color-palette-codex-kit-v0.15.0.zip",
     "members": [
       "START_HERE.md",
       "CODEX_PROMPT.txt",
-      "color_palette_skill-0.14.1-py3-none-any.whl",
+      "color_palette_skill-0.15.0-py3-none-any.whl",
       "sample/synthetic_sample.png"
     ],
     "sample_source": "examples/synthetic_portrait.png",
@@ -119,6 +131,10 @@
     "generator_writes_provenance": false
   },
   "known_risks": [
+    "Quantitative指标针对ICC标准化后的sRGB显示成片，不能恢复RAW、场景绝对亮度或Lightroom/Camera Raw原始参数",
+    "Scene Palette为确定性采样聚类，用于物体颜色结构；不得替代Neutral Axis或白平衡判断",
+    "Main Subject ROI为现有确定性fallback，语义不明确或前景背景复杂时Subject/Background指标可能需要标记样本不足或人工复核",
+    "Compare Mode v0.16与Style DNA v0.17仅有规格，本版本没有对应执行引擎",
     "A-F真实Light Anchor图片未进入仓库，不能在用户完成外部本地复验前声明6/6通过",
     "Light Source为确定性视觉特征推断，复杂布光或重度后期可能需要降级为暂不判定",
     "Material FX为确定性视觉特征推断，不能证明作者实际使用的软件、滤镜或制作步骤",

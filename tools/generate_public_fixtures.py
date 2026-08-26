@@ -17,7 +17,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 PROVENANCE_PATH = ROOT / "examples" / "public_examples_provenance.json"
 FIXED_PUBLIC_FIXTURE_PATHS = (
     "examples/synthetic_portrait.png",
-    "examples/output_v014/synthetic_portrait_color_report.png",
+    "examples/output_v015/synthetic_portrait_color_report.png",
 )
 
 
@@ -184,7 +184,7 @@ def main() -> None:
             raise RuntimeError(f"生成结果哈希未通过独立来源审核：{relative}")
 
     manifest = {
-        "version": "0.14.0",
+        "version": "0.15.0",
         "privacy": "公开",
         "license": "CC0-1.0",
         "origin": "程序生成，无真人、无私人素材、无外部版权依赖",

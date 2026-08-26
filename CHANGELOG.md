@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.0 — Unreleased
+
+- 新增基于 CIELAB L* / C*ab 的 Quantitative Color Analysis Core；
+- 新增亮度百分位、固定直方图、全局/中间调/局部对比与 Observed Tone Signature；
+- 新增 12 色相分布、分影调 Neutral Axis、中性影调色卡与确定性 Scene Palette；
+- 新增 Subject/Background ΔL、ΔC、ΔE00，以及不含审美评分的 Color DNA；
+- 新增 Schema 0.15.0、合成 Quantitative Golden Dataset、五次确定性回归与开发 Preview；
+- 新增 Compare Mode v0.16 与 Style DNA v0.17 规格，但本轮不实现对应引擎；
+- 保持 Light Analysis、Material FX、肤色算法、正式中文七模块 Renderer 与 PNG-only 协议不变。
+
 ## 0.14.1
 
 - 新增普通用户优先的 README 三分钟快速体验与公开合成报告示例；
