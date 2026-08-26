@@ -9,11 +9,14 @@ v0.15.1 是一个肤色锚点稳健性小版本。它针对“肉眼可见的倾
 ## 检测顺序
 
 1. Pass A 运行原有 OpenCV 正脸/侧脸级联；可选 dlib 的现有路径保持不变。
-2. 只有 Pass A 没有任何有效候选时，Pass B 才执行。
-3. Pass B 使用原始灰度、CLAHE 和直方图均衡副本，检查 −15°、−8°、+8°、+15°。
-4. 检测框必须通过逆仿射变换回到未旋转工作图，并裁切到图像边界内。
-5. 恢复候选还必须通过尺寸、几何比例、肤色像素占比与 L* 合理性检查。
-6. 多个不重叠且面积/得分接近的恢复候选会记录为 `ambiguous_multiple_faces` 并 fail closed。
+2. 原始检测框先按 IoU 与近中心关系去重，再作为 `raw_face_candidates` 进入候选质量评估。
+3. 候选质量分独立参考检测器置信度、面积、画面中心距离、眼部特征完整度、清晰度、肤色像素支持、正面程度与主体/背景分离。
+4. 只有通过上述验证的 `valid_faces` 才参与单人/多人决策；原始候选数量不再直接等于人物数量。
+5. 只有 Pass A 没有满足基础尺寸条件的候选时，Pass B 才执行，避免正常基线路径与旋转恢复路径叠加制造误检。
+6. Pass B 使用原始灰度、CLAHE 和直方图均衡副本，检查 −15°、−8°、+8°、+15°。
+7. 检测框必须通过逆仿射变换回到未旋转工作图，并裁切到图像边界内。
+8. 恢复候选还必须通过尺寸、几何比例、肤色像素占比与 L* 合理性检查。
+9. `valid_face_count >= 2` 或多个恢复候选确实面积/得分接近时继续 fail closed，禁止合并多人肤色。
 
 ## 肤色样本与锚点
 
@@ -28,6 +31,12 @@ v0.15.1 是一个肤色锚点稳健性小版本。它针对“肉眼可见的倾
 v0.15.1 分析器新增可选兼容字段 `skin.diagnostics`，包含：
 
 - `face_candidates`
+- `raw_face_candidates` / `raw_face_candidate_count`
+- `valid_faces` / `valid_face_count`
+- `primary_face_id` / `primary_face_score`
+- `candidate_scores` / `candidate_rejections`
+- `multi_face_block_reason`
+- `skin_output_decision`
 - `backend`
 - `recovery_used`
 - `failure_stage` / `failure_reason`

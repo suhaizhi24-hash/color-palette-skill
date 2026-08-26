@@ -28,6 +28,29 @@ def _skin_scene(*, bright: bool = False, dark_forehead: bool = False):
     return rgb, lab, np.ones((400, 400), dtype=bool)
 
 
+def _two_face_scene():
+    rgb = np.full((400, 400, 3), [70, 125, 75], dtype=np.uint8)
+    yy, xx = np.mgrid[:400, :400]
+    for center_x, center_y in ((95, 140), (295, 135)):
+        face = ((xx - center_x) / 52.0) ** 2 + ((yy - center_y) / 68.0) ** 2 <= 1
+        rgb[face] = [210, 164, 138]
+    lab = rgb2lab(rgb.astype(np.float32) / 255.0)
+    return rgb, lab, np.ones((400, 400), dtype=bool)
+
+
+def _single_subject_false_pattern_scene():
+    rgb = np.full((600, 600, 3), [115, 165, 95], dtype=np.uint8)
+    yy, xx = np.mgrid[:600, :600]
+    face = ((xx - 300) / 70.0) ** 2 + ((yy - 245) / 88.0) ** 2 <= 1
+    rgb[face] = [218, 174, 146]
+    rgb[120:180, 225:375] = [42, 32, 28]
+    # High-key blurred decoration: its pale color can resemble skin, but it has
+    # neither face structure nor separation from its surroundings.
+    rgb[320:540, 340:560] = [238, 226, 216]
+    lab = rgb2lab(rgb.astype(np.float32) / 255.0)
+    return rgb, lab, np.ones((600, 600), dtype=bool)
+
+
 class _Cascade:
     mode = "empty"
     instances = 0
@@ -53,6 +76,11 @@ class _Cascade:
             return np.array([[110, 80, 180, 180]], dtype=np.int32)
         if self.mode == "multiple" and "frontalface_default" in self.path:
             return np.array([[35, 80, 120, 120], [235, 75, 120, 120]], dtype=np.int32)
+        if self.mode == "false_patterns" and "frontalface_default" in self.path:
+            return np.array(
+                [[210, 150, 180, 180], [35, 65, 150, 150], [375, 350, 140, 140]],
+                dtype=np.int32,
+            )
         return np.empty((0, 4), dtype=np.int32)
 
 
@@ -154,13 +182,71 @@ def test_primary_anchor_remains_valid_when_forehead_is_insufficient():
 def test_multiple_faces_remain_unmerged_and_skip_recovery(monkeypatch):
     _Cascade.mode = "multiple"
     monkeypatch.setattr(faces.cv2, "CascadeClassifier", _Cascade)
-    rgb, lab, mask = _skin_scene()
+    rgb, lab, mask = _two_face_scene()
     detection = faces.detect_faces(rgb, backend="opencv")
     skin = faces.analyze_skin_anchors(rgb, lab, mask, detection)
     assert len(detection.boxes) == 2
     assert detection.recovery_used is False
     assert skin["status"] == "多人不合并"
     assert skin["diagnostics"]["failure_stage"] == "multiple_faces"
+    assert skin["diagnostics"]["valid_face_count"] == 2
+    assert skin["diagnostics"]["skin_output_decision"] == (
+        "blocked_multiple_meaningful_faces"
+    )
+
+
+def test_single_subject_false_face_patterns_do_not_trigger_multi_face_block(
+    monkeypatch,
+):
+    """Model ornate styling/high-key bokeh without committing a private photo."""
+
+    _Cascade.mode = "false_patterns"
+    monkeypatch.setattr(faces.cv2, "CascadeClassifier", _Cascade)
+    rgb, lab, mask = _single_subject_false_pattern_scene()
+    detection = faces.detect_faces(rgb, backend="opencv")
+    skin = faces.analyze_skin_anchors(rgb, lab, mask, detection)
+
+    assert detection.raw_face_candidate_count == 3
+    assert detection.valid_face_count == 1
+    assert skin["status"] == "单人"
+    assert skin["diagnostics"]["skin_output_decision"] == "single_face_allowed"
+    assert skin["diagnostics"]["multi_face_block_reason"] is None
+    reasons = {
+        reason
+        for rejected in skin["diagnostics"]["candidate_rejections"]
+        for reason in rejected["reasons"]
+    }
+    assert "skin_pixel_share_low" in reasons
+    assert "face_like_highlight_pattern" in reasons
+
+
+def test_face_candidate_dedup_merges_iou_and_near_center_detections():
+    records = [
+        {
+            "box": [100, 80, 180, 180],
+            "detector_source": "opencv_frontal",
+            "detector_confidence": 0.7,
+        },
+        {
+            "box": [112, 92, 165, 165],
+            "detector_source": "opencv_profile",
+            "detector_confidence": 0.8,
+        },
+        {
+            "box": [330, 90, 150, 150],
+            "detector_source": "opencv_frontal",
+            "detector_confidence": 0.75,
+        },
+    ]
+
+    merged = faces._merge_face_candidate_records(records)
+
+    assert len(merged) == 2
+    assert merged[0]["duplicate_count"] == 2
+    assert set(merged[0]["detector_sources"]) == {
+        "opencv_frontal",
+        "opencv_profile",
+    }
 
 
 def test_no_face_scene_fails_closed_without_skin_pixels(monkeypatch):

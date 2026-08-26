@@ -32,6 +32,15 @@ class FaceDetection:
     face_detection_ms: float = 0.0
     recovery_detection_ms: float = 0.0
     anchor_geometry: dict | None = None
+    raw_face_candidate_count: int | None = None
+    valid_face_count: int | None = None
+    primary_face_id: str | None = None
+    primary_face_score: float | None = None
+    candidate_scores: list[dict] = field(default_factory=list)
+    candidate_rejections: list[dict] = field(default_factory=list)
+    valid_faces: list[dict] = field(default_factory=list)
+    multi_face_block_reason: str | None = None
+    skin_output_decision: str | None = None
 
 
 def _iou(a: list[int], b: list[int]) -> float:
@@ -55,6 +64,275 @@ def _nms(boxes: list[list[int]], threshold: float = 0.35) -> list[list[int]]:
         if all(_iou(box, existing) < threshold for existing in kept):
             kept.append(box)
     return kept
+
+
+def _center_distance_ratio(a: list[int], b: list[int]) -> float:
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    distance = float(
+        np.hypot((ax + aw / 2.0) - (bx + bw / 2.0), (ay + ah / 2.0) - (by + bh / 2.0))
+    )
+    reference = max(1.0, min(np.hypot(aw, ah), np.hypot(bw, bh)))
+    return distance / reference
+
+
+def _merge_face_candidate_records(records: list[dict]) -> list[dict]:
+    """Merge duplicate detector boxes without merging neighbouring people."""
+
+    merged: list[dict] = []
+    for record in sorted(
+        records, key=lambda item: item["box"][2] * item["box"][3], reverse=True
+    ):
+        match = next(
+            (
+                existing
+                for existing in merged
+                if _iou(record["box"], existing["box"]) >= 0.35
+                or _center_distance_ratio(record["box"], existing["box"]) <= 0.18
+            ),
+            None,
+        )
+        if match is None:
+            copied = dict(record)
+            copied["detector_sources"] = [record["detector_source"]]
+            copied["duplicate_count"] = 1
+            merged.append(copied)
+            continue
+        match["duplicate_count"] += 1
+        if record["detector_source"] not in match["detector_sources"]:
+            match["detector_sources"].append(record["detector_source"])
+        match["detector_confidence"] = max(
+            match["detector_confidence"], record["detector_confidence"]
+        )
+    return merged
+
+
+def _opencv_detections(
+    cascade: cv2.CascadeClassifier,
+    gray: np.ndarray,
+    *,
+    scale_factor: float,
+    min_neighbors: int,
+    min_size: tuple[int, int],
+) -> list[tuple[list[int], float]]:
+    """Return Haar boxes with a normalized confidence when OpenCV exposes it."""
+
+    if hasattr(cascade, "detectMultiScale3"):
+        try:
+            boxes, _, weights = cascade.detectMultiScale3(
+                gray,
+                scaleFactor=scale_factor,
+                minNeighbors=min_neighbors,
+                minSize=min_size,
+                outputRejectLevels=True,
+            )
+            return [
+                (
+                    [int(x), int(y), int(width), int(height)],
+                    round(float(0.5 + 0.5 * np.tanh(float(weight) / 3.0)), 4),
+                )
+                for (x, y, width, height), weight in zip(boxes, weights, strict=True)
+            ]
+        except (AttributeError, TypeError, cv2.error):
+            pass
+    boxes = cascade.detectMultiScale(
+        gray,
+        scaleFactor=scale_factor,
+        minNeighbors=min_neighbors,
+        minSize=min_size,
+    )
+    return [
+        ([int(x), int(y), int(width), int(height)], 0.75)
+        for x, y, width, height in boxes
+    ]
+
+
+def _eye_landmark_support(gray: np.ndarray, box: list[int]) -> tuple[int, float]:
+    x, y, width, height = box
+    upper = gray[y : y + max(1, int(round(0.64 * height))), x : x + width]
+    if upper.size == 0:
+        return 0, 0.0
+    cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
+    if cascade.empty():
+        return 0, 0.0
+    eyes = cascade.detectMultiScale(
+        upper,
+        scaleFactor=1.1,
+        minNeighbors=4,
+        minSize=(max(12, width // 12), max(12, height // 12)),
+    )
+    plausible = []
+    for eye_x, eye_y, eye_width, eye_height in eyes:
+        center_y = eye_y + eye_height / 2.0
+        if center_y <= 0.58 * height:
+            plausible.append((eye_x + eye_width / 2.0, center_y))
+    count = min(len(plausible), 2)
+    if count >= 2:
+        xs = sorted(point[0] for point in plausible)
+        separation = (xs[-1] - xs[0]) / max(width, 1)
+        completeness = 1.0 if 0.18 <= separation <= 0.72 else 0.72
+    elif count == 1:
+        completeness = 0.55
+    else:
+        completeness = 0.0
+    return count, completeness
+
+
+def _face_quality_record(
+    record: dict,
+    *,
+    rgb: np.ndarray,
+    gray: np.ndarray,
+    lab: np.ndarray,
+    skin_mask: np.ndarray,
+) -> dict:
+    """Score a detector candidate using independent, explainable evidence."""
+
+    height, width = rgb.shape[:2]
+    x, y, box_width, box_height = record["box"]
+    image_area = max(height * width, 1)
+    area_share = box_width * box_height / image_area
+    core = _ellipse_mask(
+        (height, width),
+        x + 0.50 * box_width,
+        y + 0.53 * box_height,
+        0.34 * box_width,
+        0.40 * box_height,
+    )
+    core_count = int(core.sum())
+    skin_share = float((core & skin_mask).sum() / max(core_count, 1))
+    core_l = lab[..., 0][core]
+    median_l = float(np.median(core_l)) if core_l.size else 0.0
+
+    crop = gray[y : y + box_height, x : x + box_width]
+    sharpness = float(cv2.Laplacian(crop, cv2.CV_64F).var()) if crop.size else 0.0
+    eye_count, landmark_completeness = _eye_landmark_support(gray, record["box"])
+
+    center_x = (x + box_width / 2.0) / max(width, 1)
+    center_y = (y + box_height / 2.0) / max(height, 1)
+    center_distance = np.hypot(center_x - 0.5, center_y - 0.45)
+    center_proximity = max(0.0, 1.0 - float(center_distance) / 0.72)
+    edge_margin = min(x, y, width - (x + box_width), height - (y + box_height))
+    edge_margin_ratio = edge_margin / max(min(box_width, box_height), 1)
+
+    ring = (
+        _ellipse_mask(
+            (height, width),
+            x + 0.50 * box_width,
+            y + 0.53 * box_height,
+            0.48 * box_width,
+            0.56 * box_height,
+        )
+        & ~core
+    )
+    if core.any() and ring.any():
+        core_lab = np.median(lab[core], axis=0)
+        ring_lab = np.median(lab[ring], axis=0)
+        background_separation = float(np.linalg.norm(core_lab - ring_lab))
+    else:
+        background_separation = 0.0
+
+    aspect = box_width / max(box_height, 1)
+    aspect_quality = max(0.0, 1.0 - abs(aspect - 1.0) / 0.48)
+    frontalness = min(1.0, 0.55 * aspect_quality + 0.45 * landmark_completeness)
+    detector_confidence = float(record.get("detector_confidence", 0.75))
+    area_quality = min(area_share / 0.04, 1.0)
+    sharpness_score = min(np.log1p(sharpness) / np.log1p(500.0), 1.0)
+    skin_support = min(skin_share / 0.55, 1.0)
+    separation_score = min(background_separation / 15.0, 1.0)
+    score = (
+        0.10 * detector_confidence
+        + 0.12 * area_quality
+        + 0.08 * center_proximity
+        + 0.25 * landmark_completeness
+        + 0.10 * sharpness_score
+        + 0.25 * skin_support
+        + 0.05 * frontalness
+        + 0.05 * separation_score
+    )
+
+    rejection_reasons: list[str] = []
+    if area_share < 0.008 or box_width < 70 or box_height < 70:
+        rejection_reasons.append("bbox_too_small")
+    if edge_margin_ratio < -0.02:
+        rejection_reasons.append("extreme_edge")
+    if not 0.68 <= aspect <= 1.48:
+        rejection_reasons.append("pose_or_aspect_invalid")
+    if skin_share < 0.18:
+        rejection_reasons.append("skin_pixel_share_low")
+    if skin_share < 0.28:
+        rejection_reasons.append("accessory_or_hair_contamination_high")
+    if (
+        eye_count == 0
+        and background_separation < 8.0
+        and (skin_share < 0.45 or median_l > 88.0 or sharpness_score < 0.35)
+    ):
+        rejection_reasons.append("landmarks_missing")
+    if sharpness_score < 0.35 and background_separation < 8.0 and eye_count == 0:
+        rejection_reasons.append("background_blur_pattern")
+    if median_l > 90.0 and background_separation < 8.0 and eye_count == 0:
+        rejection_reasons.append("face_like_highlight_pattern")
+    if not 18.0 <= median_l <= 95.0:
+        rejection_reasons.append("luminance_out_of_range")
+    if score < 0.56:
+        rejection_reasons.append("face_quality_score_low")
+
+    candidate = {
+        **record,
+        "accepted": not rejection_reasons,
+        "score": round(float(score), 4),
+        "reason": "valid" if not rejection_reasons else rejection_reasons[0],
+        "rejection_reasons": rejection_reasons,
+        "area_share": round(float(area_share), 6),
+        "center_proximity": round(float(center_proximity), 4),
+        "landmark_completeness": round(float(landmark_completeness), 4),
+        "eye_landmark_count": eye_count,
+        "sharpness": round(float(sharpness), 4),
+        "sharpness_score": round(float(sharpness_score), 4),
+        "skin_pixel_share": round(float(skin_share), 4),
+        "median_l": round(float(median_l), 2),
+        "frontalness": round(float(frontalness), 4),
+        "background_separation": round(float(background_separation), 4),
+        "edge_margin_ratio": round(float(edge_margin_ratio), 4),
+        "score_components": {
+            "detector_confidence": round(detector_confidence, 4),
+            "bbox_area": round(float(area_quality), 4),
+            "image_center_proximity": round(float(center_proximity), 4),
+            "landmark_completeness": round(float(landmark_completeness), 4),
+            "sharpness": round(float(sharpness_score), 4),
+            "skin_pixel_share": round(float(skin_support), 4),
+            "frontalness": round(float(frontalness), 4),
+            "background_separation": round(float(separation_score), 4),
+        },
+    }
+    return candidate
+
+
+def _select_valid_faces(candidates: list[dict]) -> tuple[list[dict], dict | None]:
+    ranked = sorted(candidates, key=lambda item: item["score"], reverse=True)
+    accepted = [candidate for candidate in ranked if candidate["accepted"]]
+    primary = accepted[0] if accepted else None
+    if primary is None:
+        return [], None
+
+    valid: list[dict] = [primary]
+    primary_area = primary["box"][2] * primary["box"][3]
+    for candidate in accepted[1:]:
+        candidate_area = candidate["box"][2] * candidate["box"][3]
+        area_ratio = candidate_area / max(primary_area, 1)
+        score_gap = primary["score"] - candidate["score"]
+        meaningful = (
+            candidate["landmark_completeness"] >= 0.55
+            and candidate["skin_pixel_share"] >= 0.28
+            and candidate["score"] >= 0.62
+        )
+        if area_ratio < 0.30 and score_gap >= 0.16 and not meaningful:
+            candidate["accepted"] = False
+            candidate["reason"] = "area_too_small_vs_primary"
+            candidate["rejection_reasons"].append("area_too_small_vs_primary")
+            continue
+        valid.append(candidate)
+    return valid, primary
 
 
 def available_face_backends() -> list[str]:
@@ -119,8 +397,9 @@ def detect_faces(rgb: np.ndarray, backend: str | None = None) -> FaceDetection:
     else:
         note = ""
 
-    boxes: list[list[int]] = []
+    raw_records: list[dict] = []
     detectors: list[str] = []
+    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
 
     if use_dlib:
         try:
@@ -133,13 +412,17 @@ def detect_faces(rgb: np.ndarray, backend: str | None = None) -> FaceDetection:
             ):
                 dlib_rects.extend(detector(rgb, 2))
             for rect in dlib_rects:
-                boxes.append(
-                    [
-                        max(0, int(rect.left())),
-                        max(0, int(rect.top())),
-                        int(rect.width()),
-                        int(rect.height()),
-                    ]
+                raw_records.append(
+                    {
+                        "box": [
+                            max(0, int(rect.left())),
+                            max(0, int(rect.top())),
+                            int(rect.width()),
+                            int(rect.height()),
+                        ],
+                        "detector_source": "dlib",
+                        "detector_confidence": 0.85,
+                    }
                 )
             if dlib_rects:
                 detectors.append("dlib")
@@ -155,56 +438,85 @@ def detect_faces(rgb: np.ndarray, backend: str | None = None) -> FaceDetection:
         note = "OpenCV人脸组件不可用，肤色分析显示样本不足"
 
     if use_opencv:
-        gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
         cascade_paths = [
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml",
-            cv2.data.haarcascades + "haarcascade_profileface.xml",
+            (
+                "opencv_frontal",
+                cv2.data.haarcascades + "haarcascade_frontalface_default.xml",
+            ),
+            (
+                "opencv_profile",
+                cv2.data.haarcascades + "haarcascade_profileface.xml",
+            ),
         ]
-        for cascade_path in cascade_paths:
+        for detector_source, cascade_path in cascade_paths:
             cascade = cv2.CascadeClassifier(cascade_path)
             if cascade.empty():
                 continue
-            detections = cascade.detectMultiScale(
+            detections = _opencv_detections(
+                cascade,
                 gray,
-                scaleFactor=1.1,
-                minNeighbors=5,
-                minSize=(70, 70),
+                scale_factor=1.1,
+                min_neighbors=5,
+                min_size=(70, 70),
             )
-            boxes.extend(
-                [[int(x), int(y), int(w), int(h)] for x, y, w, h in detections]
+            raw_records.extend(
+                {
+                    "box": box,
+                    "detector_source": detector_source,
+                    "detector_confidence": confidence,
+                }
+                for box, confidence in detections
             )
-            if len(detections):
+            if detections:
                 detectors.append("opencv")
 
-    boxes = _nms(boxes)
     image_area = width * height
-    significant = [
-        box
-        for box in boxes
-        if box[2] >= 70 and box[3] >= 70 and (box[2] * box[3]) / image_area >= 0.012
+    merged_records = _merge_face_candidate_records(raw_records)
+    significant_records = [
+        record
+        for record in merged_records
+        if record["box"][2] >= 70
+        and record["box"][3] >= 70
+        and (record["box"][2] * record["box"][3]) / image_area >= 0.012
     ]
+    for index, record in enumerate(significant_records, start=1):
+        record["candidate_id"] = f"face_candidate_{index}"
+
+    if significant_records:
+        lab = rgb2lab(rgb.astype(np.float32) / 255.0)
+        skin_mask = _base_skin_mask(rgb, lab, np.ones((height, width), dtype=bool))
+        baseline_candidates = [
+            _face_quality_record(
+                record,
+                rgb=rgb,
+                gray=gray,
+                lab=lab,
+                skin_mask=skin_mask,
+            )
+            for record in significant_records
+        ]
+        valid_records, primary_record = _select_valid_faces(baseline_candidates)
+    else:
+        baseline_candidates = []
+        valid_records, primary_record = [], None
+
     baseline_ms = round((time.perf_counter() - detection_started) * 1000, 3)
-    baseline_candidates = [
-        {
-            "box": box,
-            "source": "baseline",
-            "preprocessing": "original",
-            "angle": 0,
-            "accepted": True,
-            "score": 1.0,
-            "reason": "baseline_detector",
-        }
-        for box in significant
-    ]
+    for candidate in baseline_candidates:
+        candidate.update(
+            {"source": "baseline", "preprocessing": "original", "angle": 0}
+        )
 
     recovery_used = False
     recovery_ms = 0.0
     failure_stage: str | None = None
     failure_reason: str | None = None
     face_candidates = baseline_candidates
-    final_boxes = significant
+    final_boxes = [candidate["box"] for candidate in valid_records]
     anchor_geometry = None
-    if not final_boxes and use_opencv:
+    if significant_records and not final_boxes:
+        failure_stage = "face_low_confidence"
+        failure_reason = "no_valid_face_candidate"
+    if not significant_records and use_opencv:
         recovery_used = True
         recovery_started = time.perf_counter()
         final_boxes, face_candidates, failure_reason, anchor_geometry = (
@@ -217,6 +529,69 @@ def detect_faces(rgb: np.ndarray, backend: str | None = None) -> FaceDetection:
                 "ambiguous_multiple_faces": "multiple_faces",
                 "face_low_confidence": "face_low_confidence",
             }.get(failure_reason, "no_face_candidate")
+
+        for index, candidate in enumerate(face_candidates, start=1):
+            candidate.setdefault("candidate_id", f"recovery_candidate_{index}")
+        if final_boxes:
+            primary_record = next(
+                (
+                    candidate
+                    for candidate in sorted(
+                        face_candidates, key=lambda item: item["score"], reverse=True
+                    )
+                    if candidate.get("accepted")
+                    and _iou(candidate["box"], final_boxes[0]) >= 0.25
+                ),
+                None,
+            )
+            valid_records = [primary_record] if primary_record else []
+
+    if len(final_boxes) >= 2:
+        failure_stage = "multiple_faces"
+        failure_reason = "multiple_meaningful_faces"
+
+    primary_face_id = primary_record.get("candidate_id") if primary_record else None
+    primary_face_score = primary_record.get("score") if primary_record else None
+    candidate_scores = [
+        {
+            "candidate_id": candidate.get("candidate_id"),
+            "box": candidate["box"],
+            "score": candidate["score"],
+            "accepted": candidate["accepted"],
+            "score_components": candidate.get("score_components", {}),
+        }
+        for candidate in face_candidates
+    ]
+    candidate_rejections = [
+        {
+            "candidate_id": candidate.get("candidate_id"),
+            "box": candidate["box"],
+            "reasons": candidate.get("rejection_reasons", [candidate["reason"]]),
+        }
+        for candidate in face_candidates
+        if not candidate["accepted"]
+    ]
+    valid_faces = [
+        {
+            "candidate_id": candidate.get("candidate_id"),
+            "box": candidate["box"],
+            "score": candidate["score"],
+        }
+        for candidate in valid_records
+        if candidate is not None and candidate.get("accepted", True)
+    ]
+    if len(final_boxes) == 1:
+        skin_output_decision = "single_face_allowed"
+        multi_face_block_reason = None
+    elif len(final_boxes) >= 2:
+        skin_output_decision = "blocked_multiple_meaningful_faces"
+        multi_face_block_reason = "valid_face_count_gte_2"
+    elif failure_reason == "ambiguous_multiple_faces":
+        skin_output_decision = "blocked_ambiguous_recovery_faces"
+        multi_face_block_reason = "ambiguous_recovery_candidates"
+    else:
+        skin_output_decision = "insufficient_no_valid_face"
+        multi_face_block_reason = None
 
     detector_name = "+".join(sorted(set(detectors))) or (
         "opencv" if use_opencv else "unavailable"
@@ -231,7 +606,7 @@ def detect_faces(rgb: np.ndarray, backend: str | None = None) -> FaceDetection:
         available_backends=available,
         degraded=degraded,
         note=note,
-        baseline_count=len(significant),
+        baseline_count=len(significant_records),
         recovery_used=recovery_used,
         face_candidates=face_candidates,
         failure_stage=failure_stage,
@@ -239,6 +614,15 @@ def detect_faces(rgb: np.ndarray, backend: str | None = None) -> FaceDetection:
         face_detection_ms=baseline_ms,
         recovery_detection_ms=recovery_ms,
         anchor_geometry=anchor_geometry,
+        raw_face_candidate_count=len(face_candidates),
+        valid_face_count=len(final_boxes),
+        primary_face_id=primary_face_id,
+        primary_face_score=primary_face_score,
+        candidate_scores=candidate_scores,
+        candidate_rejections=candidate_rejections,
+        valid_faces=valid_faces,
+        multi_face_block_reason=multi_face_block_reason,
+        skin_output_decision=skin_output_decision,
     )
 
 
@@ -650,8 +1034,44 @@ def analyze_skin_anchors(
         "backend_degraded": detection.degraded,
         "backend_note": detection.note,
     }
+    raw_candidate_count = (
+        detection.raw_face_candidate_count
+        if detection.raw_face_candidate_count is not None
+        else len(detection.face_candidates) or len(detection.boxes)
+    )
+    valid_face_count = (
+        detection.valid_face_count
+        if detection.valid_face_count is not None
+        else len(detection.boxes)
+    )
+    if detection.skin_output_decision is not None:
+        skin_output_decision = detection.skin_output_decision
+    elif valid_face_count == 1:
+        skin_output_decision = "single_face_allowed"
+    elif valid_face_count >= 2:
+        skin_output_decision = "blocked_multiple_meaningful_faces"
+    else:
+        skin_output_decision = "insufficient_no_valid_face"
     detection_diagnostics = {
         "face_candidates": detection.face_candidates,
+        "raw_face_candidates": detection.face_candidates,
+        "valid_faces": detection.valid_faces
+        or [
+            {
+                "candidate_id": f"face_candidate_{index}",
+                "box": box,
+                "score": 1.0,
+            }
+            for index, box in enumerate(detection.boxes, start=1)
+        ],
+        "raw_face_candidate_count": raw_candidate_count,
+        "valid_face_count": valid_face_count,
+        "primary_face_id": detection.primary_face_id,
+        "primary_face_score": detection.primary_face_score,
+        "candidate_scores": detection.candidate_scores,
+        "candidate_rejections": detection.candidate_rejections,
+        "multi_face_block_reason": detection.multi_face_block_reason,
+        "skin_output_decision": skin_output_decision,
         "backend": detection.detector,
         "recovery_used": detection.recovery_used,
         "failure_stage": detection.failure_stage,
@@ -704,11 +1124,11 @@ def analyze_skin_anchors(
             stage=detection.failure_stage or "no_face_candidate",
             reason=detection.failure_reason or "no_face_candidate",
         )
-    if len(detection.boxes) > 1:
+    if valid_face_count > 1:
         return finish(
             {
                 "status": "多人不合并",
-                "face_count": len(detection.boxes),
+                "face_count": valid_face_count,
                 **backend_meta,
                 "primary_anchor": None,
                 "secondary_anchor": None,

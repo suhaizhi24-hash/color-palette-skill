@@ -149,6 +149,83 @@
                 }
               }
             },
+            "raw_face_candidates": {
+              "type": "array",
+              "items": {"type": "object"}
+            },
+            "valid_faces": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["candidate_id", "box", "score"],
+                "properties": {
+                  "candidate_id": {"type": ["string", "null"]},
+                  "box": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "score": {"type": "number", "minimum": 0}
+                },
+                "additionalProperties": false
+              }
+            },
+            "raw_face_candidate_count": {"type": "integer", "minimum": 0},
+            "valid_face_count": {"type": "integer", "minimum": 0},
+            "primary_face_id": {"type": ["string", "null"]},
+            "primary_face_score": {"type": ["number", "null"], "minimum": 0},
+            "candidate_scores": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["candidate_id", "box", "score", "accepted", "score_components"],
+                "properties": {
+                  "candidate_id": {"type": ["string", "null"]},
+                  "box": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "score": {"type": "number", "minimum": 0},
+                  "accepted": {"type": "boolean"},
+                  "score_components": {"type": "object"}
+                },
+                "additionalProperties": false
+              }
+            },
+            "candidate_rejections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["candidate_id", "box", "reasons"],
+                "properties": {
+                  "candidate_id": {"type": ["string", "null"]},
+                  "box": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "multi_face_block_reason": {"type": ["string", "null"]},
+            "skin_output_decision": {
+              "enum": [
+                "single_face_allowed",
+                "blocked_multiple_meaningful_faces",
+                "blocked_ambiguous_recovery_faces",
+                "insufficient_no_valid_face",
+                "disabled"
+              ]
+            },
             "backend": {"type": "string"},
             "recovery_used": {"type": "boolean"},
             "failure_stage": {

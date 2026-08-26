@@ -36,13 +36,22 @@ def _working_image(input_path: Path):
 def _detection_debug(working: Image.Image, skin: dict) -> Image.Image:
     canvas = working.copy()
     draw = ImageDraw.Draw(canvas)
+    diagnostics = skin["diagnostics"]
+    summary = (
+        f"raw={diagnostics.get('raw_face_candidate_count', len(diagnostics['face_candidates']))} "
+        f"valid={diagnostics.get('valid_face_count', skin.get('face_count', 0))} "
+        f"decision={diagnostics.get('skin_output_decision', 'legacy')}"
+    )
+    draw.rectangle((8, 8, min(canvas.width - 8, 760), 42), fill="#FFFFFF")
+    draw.text((14, 12), summary, font=_font(18), fill="#202124")
     for candidate in skin["diagnostics"]["face_candidates"]:
         x, y, width, height = candidate["box"]
         color = "#18A558" if candidate["accepted"] else "#D83A3A"
         draw.rectangle((x, y, x + width, y + height), outline=color, width=4)
+        candidate_id = candidate.get("candidate_id", "candidate")
         draw.text(
             (x + 4, max(0, y - 24)),
-            f"{candidate['source']} {candidate.get('angle', 0):+} {candidate['reason']}",
+            (f"{candidate_id} score={candidate['score']:.3f} {candidate['reason']}"),
             font=_font(18),
             fill=color,
         )
