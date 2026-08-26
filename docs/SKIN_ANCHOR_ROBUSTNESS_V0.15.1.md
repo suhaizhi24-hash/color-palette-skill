@@ -22,9 +22,22 @@ v0.15.1 是一个肤色锚点稳健性小版本。它针对“肉眼可见的倾
 
 - 肤色候选同时参考 YCrCb、CIELAB L*/a*/b*、C*ab、RGB 关系和局部连续性。
 - 左右苹果肌分别测量有效肤色占比、L* 中位数、L* MAD/IQR、a*/b* 离散和高光/阴影污染。
+- 每侧候选还记录 ROI、L* P25/P50/P75、C* 中位数、头发/唇色污染、局部边缘密度与候选得分。主锚点优先选择连续、低污染的中间调稳定肤色，而不是最低离散但落入头发、耳侧或下颌阴影的样本。
+- 当已确认的主脸具有两处可信眼部特征时，只在锚点阶段使用眼线方向建立旋转后的脸颊/额头采样几何；该几何不参与 raw/valid face 判定，也不会改变多人保护。
 - 主锚点选择稳定中间调样本，不等价于“选最亮脸颊”。
 - 额头副锚点独立评估。主锚点 `valid` 而额头 `low_confidence` / `insufficient` 是合法结果。
 - 内部状态为 `valid | low_confidence | insufficient`；正式用户可见报告继续只显示有效数值或“样本不足”。
+
+## Cross-Anchor Coherence Gate
+
+苹果肌与额头之间记录 `ΔL*`、`Δa*`、`Δb*` 和 `ΔE00`，但色差大本身不构成错误：
+
+- 差异在正常范围内时记录 `coherent`；
+- 色差较大、主要体现为亮度差且没有头发、唇色、高光热点、高局部边缘或高色度污染时，记录 `illumination_difference`，允许保留真实硬光差异；
+- 色差较大、同时存在色度分离和局部污染证据时，记录 `contamination_suspected`，优先检查另一侧脸颊；若没有更可靠替代，主锚点降级为 `low_confidence`，不得继续保持高置信有效状态；
+- 任一锚点缺失时记录 `insufficient`。
+
+通用阈值集中定义在 `faces.py`，不得按文件名、SHA-256 或单张真实照片特判。
 
 ## `skin.diagnostics`
 
@@ -41,6 +54,9 @@ v0.15.1 分析器新增可选兼容字段 `skin.diagnostics`，包含：
 - `recovery_used`
 - `failure_stage` / `failure_reason`
 - `primary_anchor_reason` / `secondary_anchor_reason`
+- `cheek_candidates`
+- `primary_secondary_delta_l` / `primary_secondary_delta_a` / `primary_secondary_delta_b` / `primary_secondary_delta_e00`
+- `anchor_coherence`
 - `face_detection_ms` / `recovery_detection_ms` / `skin_anchor_ms`
 
 该字段只用于工程审计与本地 QA。正式 1600×1200 PNG 不显示 diagnostics、人脸框、锚点标记或置信度。旧 v0.15.0 JSON 没有该字段仍可通过 0.15.0 Schema 和兼容 Renderer。

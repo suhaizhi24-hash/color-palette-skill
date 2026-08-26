@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 import cv2
 import numpy as np
-from skimage.color import rgb2lab
+from skimage.color import deltaE_ciede2000, rgb2lab
 
 from .constants import DEFAULT_FACE_BACKEND, FACE_BACKENDS
 
@@ -14,6 +14,15 @@ try:
     import dlib  # type: ignore
 except Exception:  # pragma: no cover - optional dependency
     dlib = None
+
+
+ANCHOR_COHERENCE_LARGE_DE00 = 14.0
+ANCHOR_COHERENCE_LARGE_DELTA_L = 15.0
+ANCHOR_COHERENCE_LARGE_DELTA_A = 8.0
+ANCHOR_COHERENCE_LARGE_DELTA_B = 12.0
+ANCHOR_COHERENCE_LARGE_DELTA_C = 14.0
+CHEEK_VALID_SCORE = 0.72
+CHEEK_LOW_CONFIDENCE_SCORE = 0.58
 
 
 @dataclass(frozen=True)
@@ -176,6 +185,81 @@ def _eye_landmark_support(gray: np.ndarray, box: list[int]) -> tuple[int, float]
     else:
         completeness = 0.0
     return count, completeness
+
+
+def _baseline_anchor_geometry(gray: np.ndarray, box: list[int]) -> dict | None:
+    """Derive sampling geometry from two plausible eyes after face selection.
+
+    This geometry is intentionally downstream of face candidate filtering: it
+    can improve cheek placement, but it cannot turn a raw candidate into a
+    valid person or change single/multi-person protection.
+    """
+
+    x, y, width, height = box
+    upper = gray[y : y + max(1, int(round(0.64 * height))), x : x + width]
+    if upper.size == 0:
+        return None
+    cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
+    if cascade.empty():
+        return None
+    eyes = cascade.detectMultiScale(
+        upper,
+        scaleFactor=1.1,
+        minNeighbors=4,
+        minSize=(max(12, width // 12), max(12, height // 12)),
+    )
+    points = [
+        np.array([x + ex + eye_width / 2.0, y + ey + eye_height / 2.0])
+        for ex, ey, eye_width, eye_height in eyes
+        if ey + eye_height / 2.0 <= 0.58 * height
+    ]
+    if len(points) < 2:
+        return None
+    pairs = sorted(
+        (
+            (left, right)
+            for index, left in enumerate(points)
+            for right in points[index + 1 :]
+        ),
+        key=lambda pair: abs(float(pair[1][0] - pair[0][0])),
+        reverse=True,
+    )
+    eye_a, eye_b = pairs[0]
+    if eye_a[0] > eye_b[0]:
+        eye_a, eye_b = eye_b, eye_a
+    vector = eye_b - eye_a
+    distance = float(np.linalg.norm(vector))
+    if not 0.18 * width <= distance <= 0.72 * width:
+        return None
+    unit_x = vector / max(distance, 1e-6)
+    angle = float(np.degrees(np.arctan2(unit_x[1], unit_x[0])))
+    if abs(angle) > 35.0:
+        return None
+    unit_down = np.array([-unit_x[1], unit_x[0]])
+    if unit_down[1] < 0:
+        unit_down *= -1
+    cheek_a = eye_a + 0.58 * distance * unit_down + 0.04 * distance * unit_x
+    cheek_b = eye_b + 0.58 * distance * unit_down - 0.04 * distance * unit_x
+    forehead = np.array([x + 0.50 * width, y + 0.20 * height])
+    image_height, image_width = gray.shape[:2]
+
+    def clipped(point: np.ndarray) -> list[float]:
+        return [
+            round(float(np.clip(point[0], 0, image_width - 1)), 2),
+            round(float(np.clip(point[1], 0, image_height - 1)), 2),
+        ]
+
+    return {
+        "cheek_centers": [clipped(cheek_a), clipped(cheek_b)],
+        "forehead_center": clipped(forehead),
+        "eye_centers": [clipped(eye_a), clipped(eye_b)],
+        "face_width": int(width),
+        "face_height": int(height),
+        "orientation_degrees": round(angle, 2),
+        "cheek_orientation_degrees": round(angle, 2),
+        "forehead_orientation_degrees": 0.0,
+        "geometry_source": "eye_landmarks",
+    }
 
 
 def _face_quality_record(
@@ -545,6 +629,11 @@ def detect_faces(rgb: np.ndarray, backend: str | None = None) -> FaceDetection:
                 None,
             )
             valid_records = [primary_record] if primary_record else []
+
+    if anchor_geometry is None and len(final_boxes) == 1:
+        anchor_geometry = _baseline_anchor_geometry(gray, final_boxes[0])
+        if anchor_geometry is not None and primary_record is not None:
+            primary_record["anchor_geometry"] = anchor_geometry
 
     if len(final_boxes) >= 2:
         failure_stage = "multiple_faces"
@@ -959,19 +1048,12 @@ def skin_candidate_mask(
 def _robust_sample(
     rgb: np.ndarray, lab: np.ndarray, skin_mask: np.ndarray, roi: np.ndarray
 ) -> dict | None:
-    target = roi & skin_mask
+    target, accepted = _robust_sample_masks(lab, skin_mask, roi)
     roi_count = int(roi.sum())
-    if target.sum() < 30 or roi_count <= 0:
+    if target.sum() < 30 or roi_count <= 0 or accepted.sum() < 20:
         return None
-    values_rgb = rgb[target].astype(np.float32)
-    values_lab = lab[target]
-    median_lab = np.median(values_lab, axis=0)
-    mad = np.median(np.abs(values_lab - median_lab), axis=0) + 1e-3
-    keep = np.all(np.abs(values_lab - median_lab) <= 3.0 * mad, axis=1)
-    values_rgb = values_rgb[keep]
-    values_lab = values_lab[keep]
-    if values_rgb.shape[0] < 20:
-        return None
+    values_rgb = rgb[accepted].astype(np.float32)
+    values_lab = lab[accepted]
     rgb_median = np.median(values_rgb, axis=0)
     lab_value = rgb2lab((rgb_median / 255.0).reshape(1, 1, 3))[0, 0]
     rgb_values = [int(round(value)) for value in rgb_median]
@@ -982,8 +1064,17 @@ def _robust_sample(
         np.median(np.abs(values_lab[:, 0] - np.median(values_lab[:, 0])))
     )
     valid_ratio = float(values_rgb.shape[0] / roi_count)
+    skin_pixel_share = float(target.sum() / roi_count)
     shadow_contamination = float(np.mean(values_lab[:, 0] < 30))
     highlight_contamination = float(np.mean(values_lab[:, 0] > 90))
+    lightness_p25, lightness_median, lightness_p75 = np.percentile(
+        values_lab[:, 0], [25, 50, 75]
+    )
+    a_median = float(np.median(values_lab[:, 1]))
+    b_median = float(np.median(values_lab[:, 2]))
+    chroma_median = float(
+        np.median(np.sqrt(values_lab[:, 1] ** 2 + values_lab[:, 2] ** 2))
+    )
     ab_dispersion = float(
         np.median(
             np.sqrt(
@@ -1010,6 +1101,14 @@ def _robust_sample(
             "b": round(float(lab_value[2]), 2),
         },
         "valid_ratio": round(valid_ratio, 3),
+        "skin_pixel_share": round(skin_pixel_share, 4),
+        "rejected_pixel_share": round(float(1.0 - valid_ratio), 4),
+        "lightness_p25": round(float(lightness_p25), 2),
+        "lightness_median": round(float(lightness_median), 2),
+        "lightness_p75": round(float(lightness_p75), 2),
+        "a_median": round(a_median, 2),
+        "b_median": round(b_median, 2),
+        "chroma_median": round(chroma_median, 2),
         "lightness_iqr": round(lightness_iqr, 2),
         "lightness_mad": round(lightness_mad, 2),
         "shadow_contamination": round(shadow_contamination, 4),
@@ -1017,6 +1116,195 @@ def _robust_sample(
         "ab_dispersion": round(ab_dispersion, 2),
         "confidence": round(float(confidence), 3),
         "sample_count": int(values_rgb.shape[0]),
+    }
+
+
+def _robust_sample_masks(
+    lab: np.ndarray, skin_mask: np.ndarray, roi: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the pre-filter skin candidates and the robust accepted pixels."""
+
+    target = roi & skin_mask
+    accepted = np.zeros_like(target, dtype=bool)
+    if int(target.sum()) < 30:
+        return target, accepted
+    values_lab = lab[target]
+    median_lab = np.median(values_lab, axis=0)
+    mad = np.median(np.abs(values_lab - median_lab), axis=0) + 1e-3
+    keep = np.all(np.abs(values_lab - median_lab) <= 3.0 * mad, axis=1)
+    accepted[target] = keep
+    return target, accepted
+
+
+def _mask_bbox_xywh(mask: np.ndarray) -> list[int]:
+    ys, xs = np.where(mask)
+    if xs.size == 0:
+        return [0, 0, 0, 0]
+    left, top = int(xs.min()), int(ys.min())
+    return [left, top, int(xs.max()) - left + 1, int(ys.max()) - top + 1]
+
+
+def _cheek_candidate(
+    rgb: np.ndarray,
+    lab: np.ndarray,
+    skin_mask: np.ndarray,
+    roi: np.ndarray,
+    *,
+    side: str,
+    center: list[float],
+) -> dict | None:
+    sample = _robust_sample(rgb, lab, skin_mask, roi)
+    if sample is None:
+        return None
+    _target, accepted = _robust_sample_masks(lab, skin_mask, roi)
+    roi_count = max(int(roi.sum()), 1)
+    rejected = roi & ~accepted
+    lightness = lab[..., 0]
+    chroma = np.sqrt(lab[..., 1] ** 2 + lab[..., 2] ** 2)
+    hair_contamination = float((rejected & (lightness < 28)).sum() / roi_count)
+    lip_contamination = float(
+        (roi & (lab[..., 1] > 18) & (lab[..., 2] < 25) & (chroma > 28)).sum()
+        / roi_count
+    )
+    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+    edges = cv2.Canny(gray, 80, 160) > 0
+    local_edge_density = float(edges[roi].mean()) if roi.any() else 0.0
+
+    stability = max(0.0, 1.0 - sample["lightness_mad"] / 18.0)
+    skin_support = min(sample["skin_pixel_share"] / 0.55, 1.0)
+    midtone_distance = abs(sample["lightness_median"] - 66.0)
+    midtone_quality = max(0.0, 1.0 - max(0.0, midtone_distance - 18.0) / 28.0)
+    hair_penalty = min(hair_contamination / 0.12, 1.0)
+    lip_penalty = min(lip_contamination / 0.06, 1.0)
+    edge_penalty = min(max(local_edge_density - 0.08, 0.0) / 0.18, 1.0)
+    shadow_span_penalty = min(max(42.0 - sample["lightness_p25"], 0.0) / 20.0, 1.0)
+    high_chroma_penalty = min(max(sample["chroma_median"] - 42.0, 0.0) / 18.0, 1.0)
+    candidate_score = (
+        0.55 * sample["confidence"]
+        + 0.17 * stability
+        + 0.14 * skin_support
+        + 0.14 * midtone_quality
+        - 0.18 * hair_penalty
+        - 0.12 * lip_penalty
+        - 0.08 * edge_penalty
+        - 0.10 * shadow_span_penalty
+        - 0.06 * high_chroma_penalty
+        - 0.08 * sample["highlight_contamination"]
+    )
+    flags: list[str] = []
+    if hair_contamination >= 0.06:
+        flags.append("hair_contamination")
+    if lip_contamination >= 0.04:
+        flags.append("lip_contamination")
+    if sample["lightness_p25"] < 42.0:
+        flags.append("shadow_span")
+    if sample["highlight_contamination"] >= 0.08:
+        flags.append("highlight_hotspot")
+    if local_edge_density >= 0.18:
+        flags.append("high_local_edge_density")
+    if sample["chroma_median"] >= 48.0:
+        flags.append("high_chroma")
+
+    sample.update(
+        {
+            "side": side,
+            "center": [round(center[0], 2), round(center[1], 2)],
+            "roi_bbox": _mask_bbox_xywh(roi),
+            "accepted_skin_pixel_share": round(float(accepted.sum() / roi_count), 4),
+            "rejected_pixel_share": round(float(rejected.sum() / roi_count), 4),
+            "hair_contamination": round(hair_contamination, 4),
+            "lip_contamination": round(lip_contamination, 4),
+            "local_edge_density": round(local_edge_density, 4),
+            "candidate_score": round(float(max(0.0, candidate_score)), 3),
+            "contamination_flags": flags,
+        }
+    )
+    return sample
+
+
+def _anchor_deltas(primary: dict | None, secondary: dict | None) -> dict:
+    empty = {
+        "primary_secondary_delta_l": None,
+        "primary_secondary_delta_a": None,
+        "primary_secondary_delta_b": None,
+        "primary_secondary_delta_e00": None,
+    }
+    if not primary or not secondary:
+        return empty
+    primary_lab = np.array(
+        [primary["lab"]["l"], primary["lab"]["a"], primary["lab"]["b"]],
+        dtype=np.float64,
+    )
+    secondary_lab = np.array(
+        [secondary["lab"]["l"], secondary["lab"]["a"], secondary["lab"]["b"]],
+        dtype=np.float64,
+    )
+    delta = primary_lab - secondary_lab
+    delta_e = float(deltaE_ciede2000(primary_lab, secondary_lab))
+    return {
+        "primary_secondary_delta_l": round(float(delta[0]), 2),
+        "primary_secondary_delta_a": round(float(delta[1]), 2),
+        "primary_secondary_delta_b": round(float(delta[2]), 2),
+        "primary_secondary_delta_e00": round(delta_e, 2),
+    }
+
+
+def _coherence_evidence(primary: dict | None, secondary: dict | None) -> dict:
+    deltas = _anchor_deltas(primary, secondary)
+    if not primary or not secondary:
+        return {
+            **deltas,
+            "status": "insufficient",
+            "reason": "anchor_missing",
+            "large_delta": False,
+            "chromatic_divergence": False,
+            "contamination_evidence": [],
+        }
+    delta_l = abs(deltas["primary_secondary_delta_l"])
+    delta_a = abs(deltas["primary_secondary_delta_a"])
+    delta_b = abs(deltas["primary_secondary_delta_b"])
+    delta_e = deltas["primary_secondary_delta_e00"]
+    primary_c = float(np.hypot(primary["lab"]["a"], primary["lab"]["b"]))
+    secondary_c = float(np.hypot(secondary["lab"]["a"], secondary["lab"]["b"]))
+    delta_c = primary_c - secondary_c
+    large_delta = (
+        delta_e >= ANCHOR_COHERENCE_LARGE_DE00
+        or delta_l >= ANCHOR_COHERENCE_LARGE_DELTA_L
+    )
+    chromatic_divergence = (
+        delta_a >= ANCHOR_COHERENCE_LARGE_DELTA_A
+        or delta_b >= ANCHOR_COHERENCE_LARGE_DELTA_B
+        or delta_c >= ANCHOR_COHERENCE_LARGE_DELTA_C
+    )
+    contamination_evidence = list(primary.get("contamination_flags", []))
+    physical_contamination = any(
+        flag
+        in {
+            "hair_contamination",
+            "lip_contamination",
+            "highlight_hotspot",
+            "high_local_edge_density",
+            "high_chroma",
+        }
+        for flag in contamination_evidence
+    )
+    if not large_delta:
+        status, reason = "coherent", "within_expected_range"
+    elif chromatic_divergence and physical_contamination:
+        status, reason = "contamination_suspected", "large_delta_with_contamination"
+    else:
+        status, reason = (
+            "illumination_difference",
+            "large_delta_explained_by_illumination",
+        )
+    return {
+        **deltas,
+        "primary_secondary_delta_c": round(delta_c, 2),
+        "status": status,
+        "reason": reason,
+        "large_delta": bool(large_delta),
+        "chromatic_divergence": bool(chromatic_divergence),
+        "contamination_evidence": contamination_evidence,
     }
 
 
@@ -1141,6 +1429,10 @@ def analyze_skin_anchors(
     geometry = detection.anchor_geometry or {}
     anchor_face_width = int(geometry.get("face_width", width))
     orientation = float(geometry.get("orientation_degrees", 0.0))
+    cheek_orientation = float(geometry.get("cheek_orientation_degrees", orientation))
+    forehead_orientation = float(
+        geometry.get("forehead_orientation_degrees", orientation)
+    )
     cheek_centers = geometry.get("cheek_centers") or [
         [x + 0.32 * width, y + 0.64 * height],
         [x + 0.68 * width, y + 0.64 * height],
@@ -1155,37 +1447,31 @@ def analyze_skin_anchors(
             cy,
             0.115 * anchor_face_width,
             0.085 * anchor_face_width,
-            orientation,
+            cheek_orientation,
         )
-        sample = _robust_sample(rgb, lab, skin_mask, roi)
+        sample = _cheek_candidate(
+            rgb,
+            lab,
+            skin_mask,
+            roi,
+            side=side,
+            center=[float(cx), float(cy)],
+        )
         if sample:
-            sample.update({"side": side, "center": [round(cx, 2), round(cy, 2)]})
-            lightness = sample["lab"]["l"]
-            penalty = (
-                (0.12 if lightness > 88 else 0.0)
-                + (0.10 if lightness < 36 else 0.0)
-                + 0.18 * sample["highlight_contamination"]
-                + 0.18 * sample["shadow_contamination"]
-                + min(sample["ab_dispersion"] / 100.0, 0.12)
-            )
-            stability = max(0.0, 1.0 - sample["lightness_mad"] / 18.0)
-            sample["selection_score"] = round(
-                max(0.0, 0.82 * sample["confidence"] + 0.18 * stability - penalty),
-                3,
-            )
+            sample["selection_score"] = sample["candidate_score"]
             candidates.append(sample)
 
     primary = (
-        max(candidates, key=lambda item: item["selection_score"])
+        max(candidates, key=lambda item: item["candidate_score"])
         if candidates
         else None
     )
     if primary:
         lightness = primary["lab"]["l"]
-        if primary["selection_score"] >= 0.72 and 36 <= lightness <= 88:
+        if primary["candidate_score"] >= CHEEK_VALID_SCORE and 36 <= lightness <= 88:
             primary["status"], primary["status_code"] = "有效", "valid"
             primary_reason = "valid"
-        elif primary["selection_score"] >= 0.58:
+        elif primary["candidate_score"] >= CHEEK_LOW_CONFIDENCE_SCORE:
             primary["status"], primary["status_code"] = "仅供参考", "low_confidence"
             primary_reason = "high_variance"
         else:
@@ -1207,7 +1493,7 @@ def analyze_skin_anchors(
         forehead_center[1],
         0.14 * anchor_face_width,
         0.065 * anchor_face_width,
-        orientation,
+        forehead_orientation,
     )
     secondary = _robust_sample(rgb, lab, skin_mask, forehead_roi)
     if secondary:
@@ -1231,6 +1517,62 @@ def analyze_skin_anchors(
     else:
         secondary_reason = "secondary_anchor_invalid"
 
+    initial_primary_side = primary.get("side") if primary else None
+    coherence = _coherence_evidence(primary, secondary)
+    reselected = False
+    if primary and secondary and coherence["status"] == "contamination_suspected":
+        alternatives = sorted(
+            (candidate for candidate in candidates if candidate is not primary),
+            key=lambda item: item["candidate_score"],
+            reverse=True,
+        )
+        for alternative in alternatives:
+            alternative_coherence = _coherence_evidence(alternative, secondary)
+            current_delta = coherence["primary_secondary_delta_e00"]
+            alternative_delta = alternative_coherence["primary_secondary_delta_e00"]
+            if (
+                alternative["candidate_score"] >= CHEEK_LOW_CONFIDENCE_SCORE
+                and alternative_delta is not None
+                and current_delta is not None
+                and alternative_delta + 3.0 < current_delta
+                and alternative_coherence["status"] != "contamination_suspected"
+            ):
+                primary = alternative
+                coherence = alternative_coherence
+                reselected = True
+                break
+
+    if primary:
+        lightness = primary["lab"]["l"]
+        if primary["candidate_score"] >= CHEEK_VALID_SCORE and 36 <= lightness <= 88:
+            primary["status"], primary["status_code"] = "有效", "valid"
+            primary_reason = "valid"
+        elif primary["candidate_score"] >= CHEEK_LOW_CONFIDENCE_SCORE:
+            primary["status"], primary["status_code"] = "仅供参考", "low_confidence"
+            primary_reason = "high_variance"
+        else:
+            primary["status"], primary["status_code"] = "样本不足", "insufficient"
+            primary_reason = "primary_roi_invalid"
+        if coherence["status"] == "contamination_suspected":
+            if primary["status_code"] == "valid":
+                primary["status"], primary["status_code"] = (
+                    "仅供参考",
+                    "low_confidence",
+                )
+            primary["confidence"] = round(min(primary["confidence"], 0.69), 3)
+            primary_reason = "cross_anchor_contamination"
+        primary["crop"] = _crop_spec(
+            primary["center"], anchor_face_width, rgb.shape, factor=0.24
+        )
+
+    coherence.update(
+        {
+            "reselected": reselected,
+            "initial_primary_side": initial_primary_side,
+            "final_primary_side": primary.get("side") if primary else None,
+        }
+    )
+
     result = {
         "status": "单人",
         "face_count": 1,
@@ -1241,6 +1583,9 @@ def analyze_skin_anchors(
     }
     detection_diagnostics["primary_anchor_reason"] = primary_reason
     detection_diagnostics["secondary_anchor_reason"] = secondary_reason
+    detection_diagnostics["cheek_candidates"] = candidates
+    detection_diagnostics.update(_anchor_deltas(primary, secondary))
+    detection_diagnostics["anchor_coherence"] = coherence
     if primary and primary.get("status_code") == "valid":
         return finish(result, stage="valid", reason="valid")
     return finish(result, stage="primary_roi_invalid", reason=primary_reason)

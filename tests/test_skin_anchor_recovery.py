@@ -51,6 +51,31 @@ def _single_subject_false_pattern_scene():
     return rgb, lab, np.ones((600, 600), dtype=bool)
 
 
+def _anchor_quality_scene(
+    *,
+    left: tuple[int, int, int] = (210, 164, 138),
+    right: tuple[int, int, int] = (210, 164, 138),
+    forehead: tuple[int, int, int] = (210, 164, 138),
+):
+    """Synthetic face patches exercise anchor semantics, not photo Ground Truth."""
+
+    rgb = np.full((400, 400, 3), [70, 125, 75], dtype=np.uint8)
+    yy, xx = np.mgrid[:400, :400]
+    face = ((xx - 200) / 90.0) ** 2 + ((yy - 190) / 120.0) ** 2 <= 1
+    rgb[face] = [210, 164, 138]
+    rgb[80:105, 110:290] = [35, 28, 25]
+    cv2.ellipse(rgb, (166, 225), (25, 18), 0, 0, 360, left, -1)
+    cv2.ellipse(rgb, (234, 225), (25, 18), 0, 0, 360, right, -1)
+    cv2.ellipse(rgb, (200, 122), (28, 13), 0, 0, 360, forehead, -1)
+    lab = rgb2lab(rgb.astype(np.float32) / 255.0)
+    detection = faces.FaceDetection(
+        [[105, 75, 190, 235]], "fixture", "opencv", ["opencv"]
+    )
+    return faces.analyze_skin_anchors(
+        rgb, lab, np.ones((400, 400), dtype=bool), detection
+    )
+
+
 class _Cascade:
     mode = "empty"
     instances = 0
@@ -311,6 +336,83 @@ def test_anchor_diagnostics_report_required_performance_fields():
         "recovery_detection_ms",
         "skin_anchor_ms",
     }
+
+
+def test_hard_light_face_keeps_real_cheek_difference_explainable():
+    skin = _anchor_quality_scene(
+        left=(150, 105, 85),
+        right=(225, 180, 150),
+        forehead=(220, 175, 145),
+    )
+
+    coherence = skin["diagnostics"]["anchor_coherence"]
+    assert coherence["primary_secondary_delta_e00"] > 14
+    assert coherence["status"] == "illumination_difference"
+    assert skin["primary_anchor"]["status_code"] == "valid"
+
+
+def test_cheek_shadow_contamination_does_not_win_primary_anchor():
+    skin = _anchor_quality_scene(
+        left=(210, 164, 138),
+        right=(60, 45, 38),
+        forehead=(215, 170, 145),
+    )
+
+    candidates = {
+        item["side"]: item for item in skin["diagnostics"]["cheek_candidates"]
+    }
+    assert "shadow_span" in candidates["右侧"]["contamination_flags"]
+    assert skin["primary_anchor"]["side"] == "左侧"
+
+
+def test_warm_object_contamination_near_cheek_does_not_replace_stable_skin():
+    skin = _anchor_quality_scene(
+        left=(210, 164, 138),
+        right=(215, 150, 65),
+        forehead=(215, 170, 145),
+    )
+
+    assert skin["primary_anchor"]["side"] == "左侧"
+    assert skin["primary_anchor"]["status_code"] == "valid"
+
+
+def test_left_cheek_invalid_right_cheek_valid_uses_right_cheek():
+    skin = _anchor_quality_scene(
+        left=(40, 150, 60),
+        right=(210, 164, 138),
+        forehead=(215, 170, 145),
+    )
+
+    assert skin["primary_anchor"]["side"] == "右侧"
+    assert skin["primary_anchor"]["status_code"] == "valid"
+
+
+def test_large_primary_secondary_delta_can_be_valid_illumination_difference():
+    skin = _anchor_quality_scene(
+        left=(150, 115, 95),
+        right=(160, 123, 102),
+        forehead=(225, 190, 165),
+    )
+
+    coherence = skin["diagnostics"]["anchor_coherence"]
+    assert coherence["primary_secondary_delta_e00"] > 14
+    assert coherence["chromatic_divergence"] is False
+    assert coherence["status"] == "illumination_difference"
+    assert coherence["reason"] == "large_delta_explained_by_illumination"
+
+
+def test_large_delta_with_warm_contamination_downgrades_primary_anchor():
+    skin = _anchor_quality_scene(
+        left=(40, 150, 60),
+        right=(210, 120, 75),
+        forehead=(215, 170, 145),
+    )
+
+    coherence = skin["diagnostics"]["anchor_coherence"]
+    assert coherence["status"] == "contamination_suspected"
+    assert "high_chroma" in coherence["contamination_evidence"]
+    assert skin["primary_anchor"]["status_code"] == "low_confidence"
+    assert skin["primary_anchor"]["confidence"] <= 0.69
 
 
 def test_recovery_geometry_maps_anchor_points_inside_image():

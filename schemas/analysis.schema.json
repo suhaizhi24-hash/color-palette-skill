@@ -240,6 +240,41 @@
             "failure_reason": {"type": ["string", "null"]},
             "primary_anchor_reason": {"type": ["string", "null"]},
             "secondary_anchor_reason": {"type": ["string", "null"]},
+            "cheek_candidates": {
+              "type": "array",
+              "items": {"type": "object"}
+            },
+            "primary_secondary_delta_l": {"type": ["number", "null"]},
+            "primary_secondary_delta_a": {"type": ["number", "null"]},
+            "primary_secondary_delta_b": {"type": ["number", "null"]},
+            "primary_secondary_delta_e00": {"type": ["number", "null"], "minimum": 0},
+            "anchor_coherence": {
+              "type": "object",
+              "required": [
+                "status", "reason", "large_delta", "chromatic_divergence",
+                "contamination_evidence", "reselected", "initial_primary_side",
+                "final_primary_side"
+              ],
+              "properties": {
+                "primary_secondary_delta_l": {"type": ["number", "null"]},
+                "primary_secondary_delta_a": {"type": ["number", "null"]},
+                "primary_secondary_delta_b": {"type": ["number", "null"]},
+                "primary_secondary_delta_e00": {"type": ["number", "null"], "minimum": 0},
+                "primary_secondary_delta_c": {"type": "number"},
+                "status": {"enum": ["coherent", "illumination_difference", "contamination_suspected", "insufficient"]},
+                "reason": {"type": "string"},
+                "large_delta": {"type": "boolean"},
+                "chromatic_divergence": {"type": "boolean"},
+                "contamination_evidence": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "reselected": {"type": "boolean"},
+                "initial_primary_side": {"type": ["string", "null"]},
+                "final_primary_side": {"type": ["string", "null"]}
+              },
+              "additionalProperties": false
+            },
             "performance": {
               "type": "object",
               "required": ["face_detection_ms", "recovery_detection_ms", "skin_anchor_ms"],
