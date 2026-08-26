@@ -236,8 +236,7 @@ def test_recovery_geometry_maps_anchor_points_inside_image():
     assert geometry["orientation_degrees"] == 15.0
 
 
-def test_legacy_renderer_source_bytes_are_unchanged():
-    digest = hashlib.sha256(
-        (ROOT / "src/color_palette/render.py").read_bytes()
-    ).hexdigest()
+def test_legacy_renderer_source_text_is_unchanged_across_line_endings():
+    source = (ROOT / "src/color_palette/render.py").read_text(encoding="utf-8")
+    digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
     assert digest == LEGACY_RENDERER_SHA256
