@@ -1,12 +1,14 @@
 # Changelog
 
-## 0.15.1 — Unreleased
+## 0.15.1 — 2026-08-27
 
-- 当 OpenCV 常规检测为 0 时，新增仅限本地的旋转与灰度增强恢复检测，改善倾斜、柔焦单人像漏检；
-- 恢复候选经逆旋转映射、肤色占比与亮度合理性验证，多个近似候选继续 fail closed；
-- 苹果肌主锚点与额头副锚点独立评估，主锚点优先选择稳定中间调肤色，不再简单偏好最亮候选；
-- `analysis.json` 新增兼容性 `skin.diagnostics`，正式 PNG 不显示检测器、置信度或内部失败原因；
-- 保持 Quantitative Core、Light Analysis、Material FX、七模块布局、1600×1200 PNG + JSON 与 Zero-token 契约不变。
+- 改善倾斜、柔焦单人像的恢复检测，并对恢复候选执行映射、肤色占比与亮度合理性验证；
+- 区分原始人脸候选与有效人脸，修复背景、发饰或虚化区域误检导致的单人误判多人；
+- 优化苹果肌主锚点的稳定中间调肤色采样，降低阴影、高色度与邻近暖色物体污染；
+- 增加苹果肌与额头主副锚点一致性诊断，保留真实光照差异并对污染风险安全降级；
+- 保持 v0.15.0 Quantitative Core、Light Analysis、Material FX 与正式中文七模块 UI 不变；
+- 保持 Local-first / Zero-token，不调用 OpenAI API，不要求 API Key；
+- 正式输出继续只包含 1600×1200 PNG 与 analysis.json，JPG/JPEG 正式输出为 0。
 
 ## 0.15.0
 
