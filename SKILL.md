@@ -3,13 +3,13 @@ name: color-palette-skill
 description: Local-first、Zero-token 的中文照片色彩分析与 4:3 PNG/JSON 报告 Skill。用于分析影调、明暗、色彩浓度、白平衡与色相、肤色、素材特效、光线，以及涉及调色、LUT、Camera/Film Emulation 的任务；相关知识优先读取中央摄影知识树。
 ---
 
-# 调色盘 / 色彩卡片 SKILL V0.15.0（Quantitative Candidate）
+# 调色盘 / 色彩卡片 SKILL V0.15.1（Skin Anchor Robustness Candidate）
 
 ## 定位
 Local-first / Zero-token 的专业照片色彩分析工具。
 
-> 当前状态：**v0.15.0 Candidate，Quantitative Engine、Schema 与合成规则测试进入工程验收；正式七模块 Renderer 沿用 v0.14，A–F 外部真实照片 Benchmark 状态不被本轮软件测试升级。**
-> 在外部真实照片完成 6/6 验收前，不得将本候选版本标记为真实照片验证通过。
+> 当前状态：**v0.15.1 Candidate，仅增强倾斜、柔焦单人像的肤色锚点恢复、独立评估与可审计诊断；Quantitative Core、Light Analysis、Material FX 和正式七模块 Renderer 不变。**
+> 真实私人样片只能在仓库外本地 QA 目录验收，不得据此声称普遍的摄影科学规则已被验证。
 
 ## 最高规则 0：官方语言必须为中文
 - 所有用户可见的模块标题、结论、判断标签、降级提示与报告说明，必须使用中文（zh-CN）作为官方语言。
@@ -113,6 +113,14 @@ Local-first / Zero-token 的专业照片色彩分析工具。
 - 多人：不得合并为一个肤色锚点。
 - 无人像或低置信度：模块保留，固定显示“样本不足”，不得伪造肤色截图或数值。
 - 宁可隐藏，也不得编造。
+
+### v0.15.1 恢复检测与锚点独立性
+- Pass A 仍为常规 OpenCV / 可选 dlib 检测；只有 Pass A 人脸候选为 0 时，才允许进入 Pass B。
+- Pass B 只可对检测副本执行灰度均衡/CLAHE 和 ±8°、±15° 旋转；不得修改原图或正式报告中的原图区域。
+- 恢复候选必须逆旋转映射回原始工作图，再通过尺寸、肤色占比、亮度与颜色合理性检查；多个相似候选时必须 fail closed。
+- 苹果肌主锚点必须在左右脸颊中独立选择更稳定的中间调样本，不得简单选择最亮区域。
+- 额头副锚点独立评估；主锚点有效而副锚点样本不足是合法结果，不得反向否定主锚点。
+- `analysis.json` 可记录 `skin.diagnostics`；检测器、恢复标记、置信度和失败阶段不得出现在正式用户可见 PNG 文案中。
 
 ### 肤色锚点非侵入式展示规则（最高显示规则）
 正式 PNG 报告中的原图区域必须保持干净，不得叠加：
@@ -400,7 +408,7 @@ color-palette-golden ./images \
   --strict-missing
 ```
 
-# V0.15.0 当前工程契约（延续 V0.14.1 发布加固）
+# V0.15.1 当前工程契约（延续 V0.15.0 Quantitative Core）
 
 ## Quantitative Core
 - 数值先于形容词：先输出可复算 L*、C*ab、Hue、Neutral Axis、Tone Signature、Scene Palette 和 Subject/Background 指标，再生成中文解释；
@@ -429,7 +437,7 @@ color-palette-golden ./images \
 
 ## 人脸后端
 - 跨平台默认使用 OpenCV；
-- V0.15.0 的依赖接受范围为 OpenCV `>=4.14,<5`；核心 CI 对各平台实际解析到的 OpenCV 4.x 运行完整测试，暂不承诺 OpenCV 5.x；
+- V0.15.1 的依赖接受范围为 OpenCV `>=4.14,<5`；核心 CI 对各平台实际解析到的 OpenCV 4.x 运行完整测试，暂不承诺 OpenCV 5.x；
 - dlib 为可选增强，不得成为核心依赖；
 - dlib 缺失或失败时安全降级至 OpenCV；
 - `none` 允许关闭肤色分析，但不得影响核心色彩分析；

@@ -111,7 +111,183 @@
       "properties": {
         "status": {"enum": ["单人", "多人不合并", "无人像", "未验证"]},
         "requested_backend": {"enum": ["auto", "opencv", "dlib", "none"]},
-        "backend_degraded": {"type": "boolean"}
+        "backend_degraded": {"type": "boolean"},
+        "diagnostics": {
+          "type": "object",
+          "required": [
+            "face_candidates",
+            "backend",
+            "recovery_used",
+            "failure_stage",
+            "failure_reason",
+            "primary_anchor_reason",
+            "secondary_anchor_reason",
+            "performance"
+          ],
+          "properties": {
+            "face_candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["box", "source", "accepted", "score", "reason"],
+                "properties": {
+                  "box": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "source": {"enum": ["baseline", "recovery"]},
+                  "accepted": {"type": "boolean"},
+                  "score": {"type": "number", "minimum": 0},
+                  "reason": {"type": "string"},
+                  "preprocessing": {"type": "string"},
+                  "angle": {"type": "number"},
+                  "area_share": {"type": "number", "minimum": 0, "maximum": 1},
+                  "skin_pixel_share": {"type": "number", "minimum": 0, "maximum": 1},
+                  "median_l": {"type": "number", "minimum": 0, "maximum": 100}
+                }
+              }
+            },
+            "raw_face_candidates": {
+              "type": "array",
+              "items": {"type": "object"}
+            },
+            "valid_faces": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["candidate_id", "box", "score"],
+                "properties": {
+                  "candidate_id": {"type": ["string", "null"]},
+                  "box": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "score": {"type": "number", "minimum": 0}
+                },
+                "additionalProperties": false
+              }
+            },
+            "raw_face_candidate_count": {"type": "integer", "minimum": 0},
+            "valid_face_count": {"type": "integer", "minimum": 0},
+            "primary_face_id": {"type": ["string", "null"]},
+            "primary_face_score": {"type": ["number", "null"], "minimum": 0},
+            "candidate_scores": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["candidate_id", "box", "score", "accepted", "score_components"],
+                "properties": {
+                  "candidate_id": {"type": ["string", "null"]},
+                  "box": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "score": {"type": "number", "minimum": 0},
+                  "accepted": {"type": "boolean"},
+                  "score_components": {"type": "object"}
+                },
+                "additionalProperties": false
+              }
+            },
+            "candidate_rejections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["candidate_id", "box", "reasons"],
+                "properties": {
+                  "candidate_id": {"type": ["string", "null"]},
+                  "box": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {"type": "integer", "minimum": 0}
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "multi_face_block_reason": {"type": ["string", "null"]},
+            "skin_output_decision": {
+              "enum": [
+                "single_face_allowed",
+                "blocked_multiple_meaningful_faces",
+                "blocked_ambiguous_recovery_faces",
+                "insufficient_no_valid_face",
+                "disabled"
+              ]
+            },
+            "backend": {"type": "string"},
+            "recovery_used": {"type": "boolean"},
+            "failure_stage": {
+              "type": ["string", "null"],
+              "enum": [
+                "no_face_candidate", "multiple_faces", "face_too_small",
+                "face_low_confidence", "primary_roi_invalid", "skin_pixel_share_low",
+                "luminance_out_of_range", "color_out_of_skin_range", "high_variance",
+                "occluded", "secondary_anchor_invalid", "valid", null
+              ]
+            },
+            "failure_reason": {"type": ["string", "null"]},
+            "primary_anchor_reason": {"type": ["string", "null"]},
+            "secondary_anchor_reason": {"type": ["string", "null"]},
+            "cheek_candidates": {
+              "type": "array",
+              "items": {"type": "object"}
+            },
+            "primary_secondary_delta_l": {"type": ["number", "null"]},
+            "primary_secondary_delta_a": {"type": ["number", "null"]},
+            "primary_secondary_delta_b": {"type": ["number", "null"]},
+            "primary_secondary_delta_e00": {"type": ["number", "null"], "minimum": 0},
+            "anchor_coherence": {
+              "type": "object",
+              "required": [
+                "status", "reason", "large_delta", "chromatic_divergence",
+                "contamination_evidence", "reselected", "initial_primary_side",
+                "final_primary_side"
+              ],
+              "properties": {
+                "primary_secondary_delta_l": {"type": ["number", "null"]},
+                "primary_secondary_delta_a": {"type": ["number", "null"]},
+                "primary_secondary_delta_b": {"type": ["number", "null"]},
+                "primary_secondary_delta_e00": {"type": ["number", "null"], "minimum": 0},
+                "primary_secondary_delta_c": {"type": "number"},
+                "status": {"enum": ["coherent", "illumination_difference", "contamination_suspected", "insufficient"]},
+                "reason": {"type": "string"},
+                "large_delta": {"type": "boolean"},
+                "chromatic_divergence": {"type": "boolean"},
+                "contamination_evidence": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "reselected": {"type": "boolean"},
+                "initial_primary_side": {"type": ["string", "null"]},
+                "final_primary_side": {"type": ["string", "null"]}
+              },
+              "additionalProperties": false
+            },
+            "performance": {
+              "type": "object",
+              "required": ["face_detection_ms", "recovery_detection_ms", "skin_anchor_ms"],
+              "properties": {
+                "face_detection_ms": {"type": "number", "minimum": 0},
+                "recovery_detection_ms": {"type": "number", "minimum": 0},
+                "skin_anchor_ms": {"type": "number", "minimum": 0}
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
       }
     },
     "lighting": {

@@ -12,4 +12,6 @@ def test_analysis_is_deterministic(gradient_jpg, tmp_path):
     b.pop("outputs", None)
     a["quantitative"].pop("performance", None)
     b["quantitative"].pop("performance", None)
+    a["skin"]["diagnostics"].pop("performance", None)
+    b["skin"]["diagnostics"].pop("performance", None)
     assert a == b

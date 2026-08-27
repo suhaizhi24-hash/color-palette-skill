@@ -147,6 +147,30 @@ def analyze(
             "backend_note": "肤色分析已关闭",
             "primary_anchor": None,
             "secondary_anchor": None,
+            "diagnostics": {
+                "face_candidates": [],
+                "raw_face_candidates": [],
+                "valid_faces": [],
+                "raw_face_candidate_count": 0,
+                "valid_face_count": 0,
+                "primary_face_id": None,
+                "primary_face_score": None,
+                "candidate_scores": [],
+                "candidate_rejections": [],
+                "multi_face_block_reason": None,
+                "skin_output_decision": "disabled",
+                "backend": "disabled",
+                "recovery_used": False,
+                "failure_stage": "no_face_candidate",
+                "failure_reason": "no_face_candidate",
+                "primary_anchor_reason": None,
+                "secondary_anchor_reason": None,
+                "performance": {
+                    "face_detection_ms": 0.0,
+                    "recovery_detection_ms": 0.0,
+                    "skin_anchor_ms": 0.0,
+                },
+            },
         }
 
     lighting = analyze_lighting(

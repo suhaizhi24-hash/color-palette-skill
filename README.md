@@ -7,7 +7,7 @@ Local-first、Zero-token 的中文照片色彩分析工具。项目只分析照�
 ### 方法 A：使用 Codex（推荐新用户）
 
 1. 在 GitHub Release 下载：
-   `color-palette-codex-kit-v0.14.1.zip`
+   `color-palette-codex-kit-v0.15.1.zip`
 
 2. 解压 ZIP。
 
@@ -35,7 +35,7 @@ Codex 会自动：
 需要 Python 3.10 或更高版本：
 
 ```bash
-python -m pip install color_palette_skill-0.14.1-py3-none-any.whl
+python -m pip install color_palette_skill-0.15.1-py3-none-any.whl
 color-palette-doctor
 color-palette photo.jpg --output ./result
 ```
@@ -73,7 +73,7 @@ output/
 └── photo_color_report.png
 ```
 
-v0.15.0 Candidate 的 `analysis.json` 新增 `quantitative` 与 `color_dna`：以 L*、C*ab、Hue、Neutral Axis、Observed Tone Signature、Scene Palette 和 Subject/Background ΔE00 等可复算指标作为分析主体。正式 PNG 版式本轮不变。指标定义见 [v0.15 定量分析说明](docs/QUANTITATIVE_COLOR_ANALYSIS_V0.15.md)。
+v0.15.1 保留 v0.15.0 的 `quantitative` 与 `color_dna`：以 L*、C*ab、Hue、Neutral Axis、Observed Tone Signature、Scene Palette 和 Subject/Background ΔE00 等可复算指标作为分析主体。本小版本只增强倾斜、柔焦单人像的肤色锚点恢复与可审计诊断，正式 PNG 版式不变。指标定义见 [v0.15 定量分析说明](docs/QUANTITATIVE_COLOR_ANALYSIS_V0.15.md)。
 
 正式报告固定为 4:3、1600×1200，包含七个中文模块：
 
@@ -219,7 +219,7 @@ python -m pip install -e ".[dev]"
 
 ## 当前阶段
 
-V0.15.0 Quantitative Candidate：新增定量分析、Schema、合成 Golden Dataset 与开发 Preview；不修改 Light Analysis、Material FX、肤色算法、正式中文七模块 Renderer 或 PNG-only 协议。最新公开下载仍为 v0.14.1，本分支不得在人工验收前创建 Tag 或 Release。
+V0.15.1 Skin Anchor Robustness Candidate：仅修正倾斜、柔焦单人像的 OpenCV 恢复检测、独立苹果肌/额头锚点与内部诊断；不修改 Quantitative Core、Light Analysis、Material FX、正式中文七模块 Renderer 或 PNG-only 协议。真实私人样片仅在版本控制之外进行本地 QA 验收，人工确认前不创建 Tag 或 Release。
 
 仓库配置了 Ubuntu、macOS、Windows 与 Python 3.10、3.12、3.13 的 GitHub Actions 矩阵。具体通过状态以当前 Pull Request 的 Actions 结果为准。
 

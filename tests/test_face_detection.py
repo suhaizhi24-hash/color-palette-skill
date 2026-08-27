@@ -1,6 +1,6 @@
 import numpy as np
 
-import color_palette.faces as faces
+from color_palette import faces
 
 
 class FakeRect:
@@ -37,7 +37,13 @@ def test_dlib_second_pass_recovers_second_face(monkeypatch):
         def empty(self): return False
         def detectMultiScale(self, *args, **kwargs): return np.empty((0, 4), dtype=np.int32)
     monkeypatch.setattr(faces.cv2, "CascadeClassifier", EmptyCascade, raising=False)
-    rgb = np.zeros((600, 600, 3), dtype=np.uint8)
+    rgb = np.full((600, 600, 3), [70, 125, 75], dtype=np.uint8)
+    yy, xx = np.mgrid[:600, :600]
+    for center_x, center_y in ((155, 195), (420, 160)):
+        face = ((xx - center_x) / 56.0) ** 2 + ((yy - center_y) / 68.0) ** 2 <= 1
+        rgb[face] = [210, 164, 138]
     result = faces.detect_faces(rgb, backend="dlib")
     assert len(result.boxes) == 2
+    assert result.raw_face_candidate_count == 2
+    assert result.valid_face_count == 2
     assert result.detector == "dlib"

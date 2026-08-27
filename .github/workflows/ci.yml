@@ -95,21 +95,21 @@ jobs:
       - name: Audit built wheel
         run: >-
           python tools/audit_wheel.py dist
-          --expected-version 0.15.0
+          --expected-version 0.15.1
           --output wheel_audit.json
 
       - name: Build Codex experience kit
         if: matrix.python-version == '3.12'
         run: >-
           python tools/build_codex_kit.py dist
-          --output dist/color-palette-codex-kit-v0.15.0.zip
+          --output dist/color-palette-codex-kit-v0.15.1.zip
           --result codex_kit_build.json
 
       - name: Verify Codex kit clean install and portable paths
         if: matrix.python-version == '3.12'
         run: >-
           python tools/verify_codex_kit.py
-          dist/color-palette-codex-kit-v0.15.0.zip
+          dist/color-palette-codex-kit-v0.15.1.zip
           --schema schemas/analysis.schema.json
           --result codex_kit_smoke.json
 
@@ -130,7 +130,7 @@ jobs:
           name: diagnostics-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
             dist/*.whl
-            dist/color-palette-codex-kit-v0.15.0.zip
+            dist/color-palette-codex-kit-v0.15.1.zip
             doctor.json
             privacy_scan.json
             light_effect_validation.json
