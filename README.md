@@ -2,12 +2,14 @@
 
 Local-first、Zero-token 的中文照片色彩分析工具。项目只分析照片，不自动调色、不套用 LUT、不调用 OpenAI API 或其他付费大模型接口，也不要求 API Key。
 
+当前正式推荐版本：**v0.15.1 Public Beta**。
+
 ## 🚀 3 分钟开始使用
 
-### 方法 A：使用 Codex（推荐新用户）
+### 普通用户 / Codex 用户（推荐新用户）
 
-1. 在 GitHub Release 下载：
-   `color-palette-codex-kit-v0.15.1.zip`
+1. 前往 [v0.15.1 GitHub Release](https://github.com/suhaizhi24-hash/color-palette-skill/releases/tag/v0.15.1)，下载 Codex Kit：
+   `color-palette-codex-kit-v0.15.1.zip`。
 
 2. 解压 ZIP。
 
@@ -30,9 +32,13 @@ Codex 会自动：
 
 详细图文步骤见 [Codex 快速体验指南](docs/CODEX_QUICKSTART.md)。
 
-### 方法 B：命令行安装
+### Python / CLI 用户
 
 需要 Python 3.10 或更高版本：
+
+从 [v0.15.1 GitHub Release](https://github.com/suhaizhi24-hash/color-palette-skill/releases/tag/v0.15.1) 下载：
+
+`color_palette_skill-0.15.1-py3-none-any.whl`
 
 ```bash
 python -m pip install color_palette_skill-0.15.1-py3-none-any.whl
@@ -97,7 +103,7 @@ color-palette photo.jpg --output ./result
 color-palette photo.jpg --output ./result --face-backend opencv
 ```
 
-V0.14.x 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
+V0.15.x 的 OpenCV 依赖接受范围为 `>=4.14,<5`；核心 CI 对各平台实际解析到的
 OpenCV 4.x 运行完整测试。OpenCV 5.x 尚未纳入兼容性承诺，待完成独立兼容测试后再放开上限。
 
 其他选项：
@@ -219,11 +225,12 @@ python -m pip install -e ".[dev]"
 
 ## 当前阶段
 
-V0.15.1 Skin Anchor Robustness Candidate：仅修正倾斜、柔焦单人像的 OpenCV 恢复检测、独立苹果肌/额头锚点与内部诊断；不修改 Quantitative Core、Light Analysis、Material FX、正式中文七模块 Renderer 或 PNG-only 协议。真实私人样片仅在版本控制之外进行本地 QA 验收，人工确认前不创建 Tag 或 Release。
+v0.15.1 Public Beta 已发布：本版本修复倾斜、柔焦单人像的 OpenCV 恢复检测与单人误判多人问题，优化苹果肌稳定肤色采样，并增加主副锚点一致性诊断；不修改 Quantitative Core、Light Analysis、Material FX、正式中文七模块 Renderer 或 PNG-only 协议。真实私人样片仍只允许在版本控制之外进行本地 QA 验收。
 
 仓库配置了 Ubuntu、macOS、Windows 与 Python 3.10、3.12、3.13 的 GitHub Actions 矩阵。具体通过状态以当前 Pull Request 的 Actions 结果为准。
 
-项目采用 [Apache-2.0](LICENSE) 许可证。发布准备请阅读
+项目采用 [Apache-2.0](LICENSE) 许可证。当前版本说明见
+[v0.15.1 Beta Release Notes](docs/RELEASE_NOTES_V0.15.1.md)。历史发布准备资料包括
 [v0.12.0 Beta Release Notes](docs/RELEASE_NOTES_V0.12.0.md)、
 [合并后发布清单](docs/POST_MERGE_RELEASE_CHECKLIST_V0.12.md) 与
 [真实用户 Beta 测试计划](docs/BETA_TEST_PLAN_V0.12.md)。
